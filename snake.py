@@ -2,6 +2,7 @@
 # There is a chance I can still use it, but I will be making Snake as a backup :3
 
 from cmu_graphics import *
+
 import os
 import sys
 import random
@@ -19,4 +20,5 @@ app.height = 740
 def onKeyPress(key):
   if (key=='p'):
     restart_program()
+
 cmu_graphics.run()
