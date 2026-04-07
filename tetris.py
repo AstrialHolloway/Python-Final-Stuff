@@ -38,7 +38,6 @@ app.timerThing = 0
 pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J']
 
 tetrisMusic = Sound('assets\\tetris\\sounds\\music.mp3')
-tetrisMusic.play(loop=True)
 rotateSound = Sound('assets\\tetris\\sounds\\rotateSound.wav')
 moveSound = Sound('assets\\tetris\\sounds\\move.wav')
 rowClearSound = Sound('assets\\tetris\\sounds\\lineClear.wav')
@@ -280,6 +279,7 @@ def onKeyPress(key):
             lockPiece()
         if (app.playing == False):
             app.playing = True
+            tetrisMusic.play(loop=True,restart=True)
 
     if key in ['a','left']:
         if (app.playing == True):    
