@@ -7,10 +7,14 @@ import sys
 import random
 import time
 
-#Restarts program so I dont have to mess with closing and opening the exe thing again
+#Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
+
+app.width = 1280
+app.height = 740
+
 
 def onKeyPress(key):
   if (key=='p'):
