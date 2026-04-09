@@ -19,6 +19,7 @@ def restart_program():
 #vars
 app.width = 1280
 app.height = 740
+app.volume = 0.1
 
 app.level = 1
 app.playing = False
@@ -38,12 +39,18 @@ app.timerThing = 0
 pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J', 'U', '+','b','d']
 
 tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
+tetrisTitleMusic.setVolume(app.volume)
 tetrisTitleMusic.play(loop=True)
 tetrisEndMusic = Sound('assets\\tetris\\sounds\\gameOver.mp3')
+tetrisEndMusic.setVolume(app.volume)
 tetrisMusic = Sound('assets\\tetris\\sounds\\music.mp3')
+tetrisMusic.setVolume(app.volume)
 rotateSound = Sound('assets\\tetris\\sounds\\rotateSound.wav')
+rotateSound.setVolume(app.volume)
 moveSound = Sound('assets\\tetris\\sounds\\move.wav')
+moveSound.setVolume(app.volume)
 rowClearSound = Sound('assets\\tetris\\sounds\\lineClear.wav')
+rowClearSound.setVolume(app.volume)
 
 # background stuff, yeah
 bg = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
@@ -106,10 +113,10 @@ tetrisInGameIcon.centerX=1100
 tetrisInGameIcon.centerY=600
 
 
-Label("Next Piece:", 1050, 100, size=20, fill="white", bold=True,font='tetris')
-scoreLabel = Label("Score: 0", 1100, 260 + 100, size=18, fill="white", bold=True,font='tetris')
-linesLabel = Label("Lines: 0", 1100, 290 + 100, size=18, fill="white", bold=True,font='tetris')
-timeLabel = Label("Time: 00:00", 1100, 320 + 100, size=18, fill="white", bold=True,font='tetris')
+Label("Next Piece:", 1050, 100, size=20, fill="white", bold=True,font='Tears in Rain')
+scoreLabel = Label("Score: 0", 1100, 260 + 100, size=18, fill="white", bold=True,font='Tears in Rain')
+linesLabel = Label("Lines: 0", 1100, 290 + 100, size=18, fill="white", bold=True,font='Tears in Rain')
+timeLabel = Label("Time: 00:00", 1100, 320 + 100, size=18, fill="white", bold=True,font='Tears in Rain')
 
 titleBG = Rect(0,0,app.width,app.height)
 titleIcon = Image(tetrisInGameIconImage,0,0)
@@ -117,9 +124,22 @@ titleIcon.width=titleIcon.width*0.5
 titleIcon.height=titleIcon.height*0.5
 titleIcon.centerX=app.width/2
 titleIcon.centerY=200
-titleStartText = Label('PRESS "SPACE" TO START!',app.width/2,500,fill='white',bold=True,size=30,font='tetris')
-titleGroup = Group(titleBG,titleIcon,titleStartText)
+titleStartText = Label('PRESS "SPACE" TO START!',app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
+titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
+titleGroup = Group(titleBG,titleIcon,titleStartText,titleControlsText)
 titleGroup.visible=True
+
+controlsBG = Rect(0,0,app.width,app.height)
+controlsText = Label('CONTROLS:',200,100,fill='white',bold=True,size=30,font='Tears in Rain')
+controlsleft = Label('MOVE PIECE LEFT: LEFT/A',200,150,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsright = Label('MOVE PIECE RIGHT: RIGHT/D',200,200,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsdown = Label('MOVE PIECE DOWN: DOWN/S',200,250,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsdrop = Label('DROP PIECE: LEFT/A',200,300,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsrotateleft = Label('ROTATE PIECE LEFT: Z',200,350,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsrotateright = Label('ROTATE PIECE RIGHT: X',200,400,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsrestart = Label('RESTART PROGRAM: R',200,450,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsGroup = Group(controlsBG,controlsText,controlsleft,controlsright,controlsdown,controlsdrop,controlsrotateleft,controlsrotateright,controlsrestart)
+controlsGroup.visible = False
 
 endBG = Rect(0,0,app.width,app.height)
 endIcon = Image(tetrisInGameIconImage,0,0)
@@ -127,12 +147,11 @@ endIcon.width=endIcon.width*0.5
 endIcon.height=endIcon.height*0.5
 endIcon.centerX=app.width/2
 endIcon.centerY=200
-endText = Label('GAME OVER',app.width/2,400,fill='white',bold=True,size=30,font='tetris')
-endScoreText = Label("SCORE: " + str(app.score),app.width/2,450,fill='white',bold=True,size=30,font='tetris')
-endLinesText = Label("LINES: " + str(app.linesCleared),app.width/2,500,fill='white',bold=True,size=30,font='tetris')
-endTimeText = Label(timeLabel.value,app.width/2,550,fill='white',bold=True,size=30,font='tetris')
-endRestartText = Label('PRESS "P" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='tetris')
-
+endText = Label('GAME OVER',app.width/2,400,fill='white',bold=True,size=30,font='Tears in Rain')
+endScoreText = Label("SCORE: " + str(app.score),app.width/2,450,fill='white',bold=True,size=30,font='Tears in Rain')
+endLinesText = Label("LINES: " + str(app.linesCleared),app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
+endTimeText = Label(timeLabel.value,app.width/2,550,fill='white',bold=True,size=30,font='Tears in Rain')
+endRestartText = Label('PRESS "R" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='Tears in Rain')
 endGroup = Group(endBG,endIcon,endText,endScoreText,endLinesText,endTimeText,endRestartText)
 endGroup.visible=False
 
@@ -172,13 +191,13 @@ def getPieceData(t):
     if t == 'J':
         return [(1,0),(1,1),(1,2),(0,2)], ('blue','midnightBlue')
     if t == 'U':
-        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('darkOrange','orangeRed')
+        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('cyan','darkCyan')
     if t == '+':
-        return [(0,1),(1,0),(1,1),(2,1),(1,2)], (None,'black')
+        return [(0,1),(1,0),(1,1),(2,1),(1,2)], ('white','lightGray')
     if t == 'b':
-        return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('darkTurquoise','royalBlue')
+        return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('mediumPurple','indigo')
     if t == 'd':
-        return [(0,1),(0,2),(1,0),(1,1),(1,2)], (None,'black')
+        return [(0,1),(0,2),(1,0),(1,1),(1,2)], ('lightCoral','darkRed')
 
 def newPiece(t, mode):
     coords, color = getPieceData(t)
@@ -213,8 +232,12 @@ def newPiece(t, mode):
             )
             previewBlocks.add(block)
 
-app.rand1 = random.randint(0, 10)
-app.rand2 = random.randint(0, 10)
+if (app.level < 2):
+    app.rand1 = random.randint(0, 6)
+    app.rand2 = random.randint(0, 6)
+else:
+    app.rand1 = random.randint(0, 10)
+    app.rand2 = random.randint(0, 10)
 
 newPiece(pieceList[app.rand1], 'cur')
 newPiece(pieceList[app.rand2], 'next')
@@ -297,7 +320,7 @@ def rotatePiece(direction):
         block.centerX, block.centerY = newPositions[i]
 
 def onKeyPress(key):
-    if key == 'p':
+    if key == 'r':
         restart_program()
 
     if key == 'z':
@@ -307,6 +330,17 @@ def onKeyPress(key):
     if key == 'x':
         if (app.playing == True):
             rotatePiece("right")
+    if key == 'tab':
+        if (app.playing == False):
+            app.playing = 'controls'
+            titleGroup.visible=False
+            controlsGroup.visible=True
+    if key == 'escape':
+        if app.playing == 'controls':
+            app.playing = False
+            titleGroup.visible=True
+            controlsGroup.visible=False
+
     if key == 'space':
         if (app.playing == True):    
             while canMove(0, app.blockSize):
@@ -393,6 +427,8 @@ def clearRows():
         elif lines == 4:
             app.score += 800
 
+        app.level = (app.linesCleared // 10) + 1
+
         # update labels
         scoreLabel.value = f"Score: {app.score}"
         linesLabel.value = f"Lines: {app.linesCleared}"
@@ -406,8 +442,10 @@ def lockPiece():
         curPiece.clear()
 
         app.rand1 = app.rand2
-        if (app.level)
-        app.rand2 = random.randint(0, 10)
+        if (app.level < 2):
+            app.rand2 = random.randint(0, 6)
+        else:
+            app.rand2 = random.randint(0, 10)
 
         newPiece(pieceList[app.rand1], 'cur')
         newPiece(pieceList[app.rand2], 'next')
@@ -503,8 +541,9 @@ def onStep():
 
         timeLabel.value = f"Time: {minutes:02}:{seconds:02}"
         endTimeText.value = f"Time: {minutes:02}:{seconds:02}".upper()
+        speed = max(5, 20 - app.level * 2)
 
-        if app.timerThing >= 20:
+        if app.timerThing >= speed:
             app.timerThing = 0
 
             if canMove(0, app.blockSize):
