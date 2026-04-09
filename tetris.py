@@ -35,8 +35,11 @@ app.offsetY = 20
 app.cols = 10
 app.timerThing = 0
 
-pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J']
+pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J', 'U', '+','b','d']
 
+tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
+tetrisTitleMusic.play(loop=True)
+tetrisEndMusic = Sound('assets\\tetris\\sounds\\gameOver.mp3')
 tetrisMusic = Sound('assets\\tetris\\sounds\\music.mp3')
 rotateSound = Sound('assets\\tetris\\sounds\\rotateSound.wav')
 moveSound = Sound('assets\\tetris\\sounds\\move.wav')
@@ -103,10 +106,35 @@ tetrisInGameIcon.centerX=1100
 tetrisInGameIcon.centerY=600
 
 
-Label("Next Piece:", 1050, 100, size=20, fill="white", bold=True)
-scoreLabel = Label("Score: 0", 1100, 260 + 100, size=18, fill="white", bold=True)
-linesLabel = Label("Lines: 0", 1100, 290 + 100, size=18, fill="white", bold=True)
-timeLabel = Label("Time: 00:00", 1100, 320 + 100, size=18, fill="white", bold=True)
+Label("Next Piece:", 1050, 100, size=20, fill="white", bold=True,font='tetris')
+scoreLabel = Label("Score: 0", 1100, 260 + 100, size=18, fill="white", bold=True,font='tetris')
+linesLabel = Label("Lines: 0", 1100, 290 + 100, size=18, fill="white", bold=True,font='tetris')
+timeLabel = Label("Time: 00:00", 1100, 320 + 100, size=18, fill="white", bold=True,font='tetris')
+
+titleBG = Rect(0,0,app.width,app.height)
+titleIcon = Image(tetrisInGameIconImage,0,0)
+titleIcon.width=titleIcon.width*0.5
+titleIcon.height=titleIcon.height*0.5
+titleIcon.centerX=app.width/2
+titleIcon.centerY=200
+titleStartText = Label('PRESS "SPACE" TO START!',app.width/2,500,fill='white',bold=True,size=30,font='tetris')
+titleGroup = Group(titleBG,titleIcon,titleStartText)
+titleGroup.visible=True
+
+endBG = Rect(0,0,app.width,app.height)
+endIcon = Image(tetrisInGameIconImage,0,0)
+endIcon.width=endIcon.width*0.5
+endIcon.height=endIcon.height*0.5
+endIcon.centerX=app.width/2
+endIcon.centerY=200
+endText = Label('GAME OVER',app.width/2,400,fill='white',bold=True,size=30,font='tetris')
+endScoreText = Label("SCORE: " + str(app.score),app.width/2,450,fill='white',bold=True,size=30,font='tetris')
+endLinesText = Label("LINES: " + str(app.linesCleared),app.width/2,500,fill='white',bold=True,size=30,font='tetris')
+endTimeText = Label(timeLabel.value,app.width/2,550,fill='white',bold=True,size=30,font='tetris')
+endRestartText = Label('PRESS "P" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='tetris')
+
+endGroup = Group(endBG,endIcon,endText,endScoreText,endLinesText,endTimeText,endRestartText)
+endGroup.visible=False
 
 def createBlock(x, y, fillColor, borderColor):
     g = Group()
@@ -143,6 +171,14 @@ def getPieceData(t):
         return [(0,0),(0,1),(0,2),(1,2)], ('orange','tomato')
     if t == 'J':
         return [(1,0),(1,1),(1,2),(0,2)], ('blue','midnightBlue')
+    if t == 'U':
+        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('darkOrange','orangeRed')
+    if t == '+':
+        return [(0,1),(1,0),(1,1),(2,1),(1,2)], (None,'black')
+    if t == 'b':
+        return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('darkTurquoise','royalBlue')
+    if t == 'd':
+        return [(0,1),(0,2),(1,0),(1,1),(1,2)], (None,'black')
 
 def newPiece(t, mode):
     coords, color = getPieceData(t)
@@ -177,8 +213,8 @@ def newPiece(t, mode):
             )
             previewBlocks.add(block)
 
-app.rand1 = random.randint(0, 6)
-app.rand2 = random.randint(0, 6)
+app.rand1 = random.randint(0, 10)
+app.rand2 = random.randint(0, 10)
 
 newPiece(pieceList[app.rand1], 'cur')
 newPiece(pieceList[app.rand2], 'next')
@@ -279,6 +315,8 @@ def onKeyPress(key):
             lockPiece()
         if (app.playing == False):
             app.playing = True
+            titleGroup.visible=False
+            tetrisTitleMusic.pause()
             tetrisMusic.play(loop=True,restart=True)
 
     if key in ['a','left']:
@@ -368,7 +406,8 @@ def lockPiece():
         curPiece.clear()
 
         app.rand1 = app.rand2
-        app.rand2 = random.randint(0, 6)
+        if (app.level)
+        app.rand2 = random.randint(0, 10)
 
         newPiece(pieceList[app.rand1], 'cur')
         newPiece(pieceList[app.rand2], 'next')
@@ -443,6 +482,16 @@ def updateGhost():
 
 def onStep():
     if (app.playing == True):
+        if (curPiece.top < 20):
+            curPiece.top = 20
+        if (placedPieces.top == 20):
+            app.playing = 'end'
+            tetrisMusic.pause()
+            endGroup.visible=True
+            tetrisEndMusic.play(restart=True,loop=True)
+
+        endLinesText.value = 'LINES: ' + str(app.linesCleared)
+        endScoreText.value = 'SCORE: ' + str(app.score)
         previewBlocks.centerX=1100
         app.timerThing += 1
         updateGhost()
@@ -453,6 +502,7 @@ def onStep():
         seconds = elapsedSeconds % 60
 
         timeLabel.value = f"Time: {minutes:02}:{seconds:02}"
+        endTimeText.value = f"Time: {minutes:02}:{seconds:02}".upper()
 
         if app.timerThing >= 20:
             app.timerThing = 0
