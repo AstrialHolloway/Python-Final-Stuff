@@ -206,10 +206,10 @@ def getPieceData(t):
         return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('mediumPurple', 'indigo')
     if t == 'd':
         return [(0,1),(0,2),(1,0),(1,1),(1,2)], ('lightCoral', 'darkRed')
-    if t == 'd':
-        return [(0,2),(1,2),(1,1),(2,1),(2,0)], ('lightCoral', 'darkRed')
-    if t == 'd':
+    if t == '/':
         return [(2,0),(2,1),(1,1),(1,2),(0,2)], ('lightCoral', 'darkRed')
+    if t == '\':
+        return [(0,0),(0,1),(1,1),(1,2),(2,2)], ('lightCoral', 'darkRed')
 
 def newPiece(t, mode):
     coords, color = getPieceData(t)
@@ -244,12 +244,15 @@ def newPiece(t, mode):
             )
             previewBlocks.add(block)
 
-if (app.level < 2):
-    app.rand1 = random.randint(0, 6)
-    app.rand2 = random.randint(0, 6)
-else:
-    app.rand1 = random.randint(0, 10)
-    app.rand2 = random.randint(0, 10)
+if (app.level == 1):
+    app.rand1 = random.randint(0, 4)
+    app.rand2 = random.randint(0, 4)
+elif (app.level == 3):
+    app.rand1 = random.randint(0, 8)
+    app.rand2 = random.randint(0, 8)
+elif (app.level >= 3):
+    app.rand1 = random.randint(0, 12)
+    app.rand2 = random.randint(0, 12)
 
 newPiece(pieceList[app.rand1], 'cur')
 newPiece(pieceList[app.rand2], 'next')
@@ -454,10 +457,12 @@ def lockPiece():
         curPiece.clear()
 
         app.rand1 = app.rand2
-        if (app.level < 2):
-            app.rand2 = random.randint(0, 6)
-        else:
-            app.rand2 = random.randint(0, 10)
+        if (app.level == 1):
+            app.rand2 = random.randint(0, 4)
+        elif (app.level == 3):
+            app.rand2 = random.randint(0, 8)
+        elif (app.level >= 3):
+            app.rand2 = random.randint(0, 12)
 
         newPiece(pieceList[app.rand1], 'cur')
         newPiece(pieceList[app.rand2], 'next')
