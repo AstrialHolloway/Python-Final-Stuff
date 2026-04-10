@@ -21,7 +21,7 @@ app.width = 1280
 app.height = 740
 app.volume = 0.1
 
-app.level = 1
+app.level = 2
 app.playing = False
 app.steps = 0
 app.stepCount = 0
@@ -37,6 +37,7 @@ app.cols = 10
 app.timerThing = 0
 
 pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J', 'U', '+','b','d']
+#pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+','b','d']
 
 tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
 tetrisTitleMusic.setVolume(app.volume)
@@ -134,7 +135,7 @@ controlsText = Label('CONTROLS:',200,100,fill='white',bold=True,size=30,font='Te
 controlsleft = Label('MOVE PIECE LEFT: LEFT/A',200,150,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
 controlsright = Label('MOVE PIECE RIGHT: RIGHT/D',200,200,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
 controlsdown = Label('MOVE PIECE DOWN: DOWN/S',200,250,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
-controlsdrop = Label('DROP PIECE: LEFT/A',200,300,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+controlsdrop = Label('DROP PIECE: SPACE',200,300,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
 controlsrotateleft = Label('ROTATE PIECE LEFT: Z',200,350,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
 controlsrotateright = Label('ROTATE PIECE RIGHT: X',200,400,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
 controlsrestart = Label('RESTART PROGRAM: R',200,450,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
