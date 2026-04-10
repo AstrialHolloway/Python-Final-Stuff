@@ -12,6 +12,8 @@ import random
 import time
 
 #Restarts program so I don't have to mess with closing and opening the exe thing again
+
+
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
@@ -35,6 +37,17 @@ app.offsetX = 400
 app.offsetY = 20
 app.cols = 10
 app.timerThing = 0
+
+def save_high_score():
+    with open('data\\Tetris\\save.txt','w') as file:
+        file.write(str(app.score))
+
+def load_high_score():
+    try:
+        with open('data\\Tetris\\save.txt','r') as file:
+            return int(file.read())
+    except (FileNotFoundError, ValueError):
+        return 0
 
 #Z-I=Lev1
 #L-+=Lev2
