@@ -2,8 +2,8 @@
 #This code is for my final project for my advanced coding class.
 #The final project was going to be a fnf remake, but that would take way too long to work on, so I am choosing this :3
 #IDK how long this dang thing will take to finish, but I don't care. As long as I can finish it before the end of the school year lol
-#If you make the screen size larger than 1280x740, it may look wrong, soooooo just keep it like it is currently :3
-#I'm too lazy to add good comments so don't expext super orginized comments lol
+#If you make the screen size larger than 1280x740, it may look wrong, soooooo keep it like it is currently :3
+#I'm too lazy to add good comments, so don't expect super organized comments lol
 
 from cmu_graphics import *
 import os
@@ -11,7 +11,7 @@ import sys
 import random
 import time
 
-#Restarts program so I dont have to mess with closing and opening the exe thing again
+#Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
@@ -36,8 +36,15 @@ app.offsetY = 20
 app.cols = 10
 app.timerThing = 0
 
-pieceList = ['Z', 'S', 'T', 'O', 'I', 'L', 'J', 'U', '+','b','d']
-#pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+','b','d']
+#Z-I=Lev1
+#L-+=Lev2
+#b-\=Lev3
+pieceList = [
+    'Z', 'S', 'T', 'O', 'I',
+    'L', 'J', 'U', '+', 
+    'b', 'd', '/', '\'
+    ]
+#pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+', 'b', 'd','/', '\']
 
 tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
 tetrisTitleMusic.setVolume(app.volume)
@@ -178,27 +185,31 @@ def createBlock(x, y, fillColor, borderColor):
 
 def getPieceData(t):
     if t == 'Z':
-        return [(0,0),(1,0),(1,1),(2,1)], ('red','darkRed')
+        return [(0,0),(1,0),(1,1),(2,1)], ('red', 'darkRed')
     if t == 'S':
-        return [(1,0),(2,0),(0,1),(1,1)], ('lime','limeGreen')
+        return [(1,0),(2,0),(0,1),(1,1)], ('lime', 'limeGreen')
     if t == 'T':
-        return [(0,0),(1,0),(2,0),(1,1)], ('magenta','darkViolet')
+        return [(0,0),(1,0),(2,0),(1,1)], ('magenta', 'darkViolet')
     if t == 'O':
-        return [(0,0),(1,0),(0,1),(1,1)], ('yellow','gold')
+        return [(0,0),(1,0),(0,1),(1,1)], ('yellow', 'gold')
     if t == 'I':
-        return [(0,0),(0,1),(0,2),(0,3)], ('skyBlue','deepSkyBlue')
+        return [(0,0),(0,1),(0,2),(0,3)], ('skyBlue', 'deepSkyBlue')
     if t == 'L':
-        return [(0,0),(0,1),(0,2),(1,2)], ('orange','tomato')
+        return [(0,0),(0,1),(0,2),(1,2)], ('orange', 'tomato')
     if t == 'J':
-        return [(1,0),(1,1),(1,2),(0,2)], ('blue','midnightBlue')
+        return [(1,0),(1,1),(1,2),(0,2)], ('blue', 'midnightBlue')
     if t == 'U':
-        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('cyan','darkCyan')
+        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('cyan', 'darkCyan')
     if t == '+':
-        return [(0,1),(1,0),(1,1),(2,1),(1,2)], ('white','lightGray')
+        return [(0,1),(1,0),(1,1),(2,1),(1,2)], ('white', 'lightGray')
     if t == 'b':
-        return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('mediumPurple','indigo')
+        return [(0,0),(0,1),(0,2),(1,1),(1,2)], ('mediumPurple', 'indigo')
     if t == 'd':
-        return [(0,1),(0,2),(1,0),(1,1),(1,2)], ('lightCoral','darkRed')
+        return [(0,1),(0,2),(1,0),(1,1),(1,2)], ('lightCoral', 'darkRed')
+    if t == 'd':
+        return [(0,2),(1,2),(1,1),(2,1),(2,0)], ('lightCoral', 'darkRed')
+    if t == 'd':
+        return [(2,0),(2,1),(1,1),(1,2),(0,2)], ('lightCoral', 'darkRed')
 
 def newPiece(t, mode):
     coords, color = getPieceData(t)
