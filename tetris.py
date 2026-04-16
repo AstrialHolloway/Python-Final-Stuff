@@ -23,7 +23,7 @@ app.width = 1280
 app.height = 740
 app.volume = 0.1
 
-app.level = 2
+app.level = 3
 app.playing = False
 app.steps = 0
 app.stepCount = 0
@@ -55,7 +55,7 @@ def load_high_score():
 pieceList = [
     'Z', 'S', 'T', 'O', 'I',
     'L', 'J', 'U', '+', 
-    'b', 'd', '/', '\'
+    'b', 'd', '/', '\\'
     ]
 #pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+', 'b', 'd','/', '\']
 
@@ -221,7 +221,7 @@ def getPieceData(t):
         return [(0,1),(0,2),(1,0),(1,1),(1,2)], ('lightCoral', 'darkRed')
     if t == '/':
         return [(2,0),(2,1),(1,1),(1,2),(0,2)], ('lightCoral', 'darkRed')
-    if t == '\':
+    if t == '\\':
         return [(0,0),(0,1),(1,1),(1,2),(2,2)], ('lightCoral', 'darkRed')
 
 def newPiece(t, mode):
@@ -260,7 +260,7 @@ def newPiece(t, mode):
 if (app.level == 1):
     app.rand1 = random.randint(0, 4)
     app.rand2 = random.randint(0, 4)
-elif (app.level == 3):
+elif (app.level == 2):
     app.rand1 = random.randint(0, 8)
     app.rand2 = random.randint(0, 8)
 elif (app.level >= 3):
@@ -472,7 +472,7 @@ def lockPiece():
         app.rand1 = app.rand2
         if (app.level == 1):
             app.rand2 = random.randint(0, 4)
-        elif (app.level == 3):
+        elif (app.level == 2):
             app.rand2 = random.randint(0, 8)
         elif (app.level >= 3):
             app.rand2 = random.randint(0, 12)
