@@ -49,12 +49,11 @@ def save_high_score():
 
 def load_high_score():
     try:
-        # 2. Use the absolute path
         with open(FILE_PATH, 'r') as file:
             content = file.read().strip()
             return int(content) if content else 0
     except (FileNotFoundError, ValueError) as e:
-        # Optional: print(f"Note: High score not loaded ({e})")
+        print(f"Note: High score not loaded ({e})")
         return 0
 
 pieceList = [
@@ -368,12 +367,32 @@ def onKeyPress(key):
         if (app.volume > 0):
             app.volume -= 0.1
         setVolume()
+        
     if key == '=':
         if (app.volume < 0.5):
             app.volume += 0.1
         setVolume()
-    if key == 'r':
+        
+    if key == 'p':
         restart_program()
+        
+    if key == 'r':
+        if app.playing == 'end':
+            if app.score > load_high_score():
+                save_high_score()
+            app.score = 0
+            app.linesCleared = 0
+            app.level = 0
+            app.startTime = None
+            refillBag()
+            newPiece(app.currentType, 'cur')
+            newPiece(app.nextType, 'next')
+            app.playing=False
+            titleGroup.visible=True
+            endGroup.visible=False
+            placedPieces.clear()
+            
+            pass
 
     if key == 'z':
         if (app.playing == True):
