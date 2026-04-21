@@ -57,18 +57,24 @@ pieceList = [
 #pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+', 'b', 'd','/', '\']
 
 tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
-tetrisTitleMusic.setVolume(app.volume)
 tetrisTitleMusic.play(loop=True)
 tetrisEndMusic = Sound('assets\\tetris\\sounds\\gameOver.mp3')
-tetrisEndMusic.setVolume(app.volume)
 tetrisMusic = Sound('assets\\tetris\\sounds\\music.mp3')
-tetrisMusic.setVolume(app.volume)
 rotateSound = Sound('assets\\tetris\\sounds\\rotateSound.wav')
-rotateSound.setVolume(app.volume)
 moveSound = Sound('assets\\tetris\\sounds\\move.wav')
-moveSound.setVolume(app.volume)
 rowClearSound = Sound('assets\\tetris\\sounds\\lineClear.wav')
-rowClearSound.setVolume(app.volume)
+
+def setVolume():
+    tetrisTitleMusic.setVolume(app.volume)
+    tetrisEndMusic.setVolume(app.volume)
+    tetrisMusic.setVolume(app.volume)
+    rotateSound.setVolume(app.volume)
+    moveSound.setVolume(app.volume)
+    rowClearSound.setVolume(app.volume)
+setVolume()
+
+
+
 
 # background stuff, yeah
 bg = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
@@ -139,15 +145,17 @@ levelLabel = Label("Level: 1", 1100, 320 + 100, size=18, fill="white", bold=True
 
 timeLabel = Label("Time: 00:00", 1100, 350 + 100, size=18, fill="white", bold=True,font='Tears in Rain')
 
-titleBG = Rect(0,0,app.width,app.height)
+
+titleBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
+titlePanel = Rect(app.width/2 - 350,15,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
 titleIcon = Image(tetrisInGameIconImage,0,0)
 titleIcon.width=titleIcon.width*0.5
 titleIcon.height=titleIcon.height*0.5
 titleIcon.centerX=app.width/2
-titleIcon.centerY=200
+titleIcon.centerY=250
 titleStartText = Label('PRESS "SPACE" TO START!',app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
 titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
-titleGroup = Group(titleBG,titleIcon,titleStartText,titleControlsText)
+titleGroup = Group(titleBG,titlePanel,titleIcon,titleStartText,titleControlsText)
 titleGroup.visible=True
 
 controlsBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
@@ -163,7 +171,9 @@ controlsrestart = Label("R : Restart Game", app.width/2, 480,fill='white', bold=
 controlsGroup = Group(controlsBG,controlsPanel,controlsText,controlsleft,controlsright,controlsdown,controlsdrop,controlsrotateleft,controlsrotateright,controlsrestart)
 controlsGroup.visible = False
 
-endBG = Rect(0,0,app.width,app.height)
+
+endBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
+endPanel = Rect(app.width/2 - 350,15,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
 endIcon = Image(tetrisInGameIconImage,0,0)
 endIcon.width=endIcon.width*0.5
 endIcon.height=endIcon.height*0.5
@@ -174,8 +184,8 @@ endScoreText = Label("SCORE: " + str(app.score),app.width/2,450,fill='white',bol
 endLinesText = Label("LINES: " + str(app.linesCleared),app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
 endLevelText = Label("LEVEL: " + str(app.level),app.width/2,550,fill='white',bold=True,size=30,font='Tears in Rain')
 endTimeText = Label(timeLabel.value,app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
-endRestartText = Label('PRESS "R" TO RESTART',app.width/2,700,fill='white',bold=True,size=30,font='Tears in Rain')
-endGroup = Group(endBG,endIcon,endText,endScoreText,endLinesText,endLevelText,endTimeText,endRestartText)
+endRestartText = Label('PRESS "R" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='Tears in Rain')
+endGroup = Group(endBG,endPanel,endIcon,endText,endScoreText,endLinesText,endLevelText,endTimeText,endRestartText)
 endGroup.visible=False
 
 def updateUI():
@@ -347,6 +357,14 @@ def rotatePiece(direction):
         block.centerX, block.centerY = newPositions[i]
 
 def onKeyPress(key):
+    if key == '-':
+        if (app.volume > 0):
+            app.volume -= 0.1
+        setVolume()
+    if key == '=':
+        if (app.volume < 0.5):
+            app.volume += 0.1
+        setVolume()
     if key == 'r':
         restart_program()
 
