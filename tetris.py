@@ -10,10 +10,9 @@ import os
 import sys
 import random
 import time
+import math
 
 #Restarts program so I don't have to mess with closing and opening the exe thing again
-
-
 def restart_program():
     python = sys.executable
     os.execv(python, [python] + sys.argv)
@@ -43,8 +42,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, 'data', 'Tetris', 'save.txt')
 
 def save_high_score():
-    os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-    with open(SAVE_PATH, 'w') as file:
+    os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
+    with open(FILE_PATH, 'w') as file:
         file.write(str(app.score))
 
 def load_high_score():
@@ -55,6 +54,9 @@ def load_high_score():
     except (FileNotFoundError, ValueError) as e:
         print(f"Note: High score not loaded ({e})")
         return 0
+    
+app.highScore = load_high_score()
+app.newHighScore = False
 
 pieceList = [
     'Z', 'S', 'T', 'O', 'I',
@@ -186,13 +188,17 @@ endIcon.height=endIcon.height*0.5
 endIcon.centerX=app.width/2
 endIcon.centerY=200
 endText = Label('GAME OVER',app.width/2,400,fill='white',bold=True,size=30,font='Tears in Rain')
-endScoreText = Label("SCORE: " + str(app.score),app.width/2,450,fill='white',bold=True,size=30,font='Tears in Rain')
-endLinesText = Label("LINES: " + str(app.linesCleared),app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
-endLevelText = Label("LEVEL: " + str(app.level),app.width/2,550,fill='white',bold=True,size=30,font='Tears in Rain')
+endScoreText = Label("SCORE: " + str(app.score),endPanel.left + 50,450,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endLinesText = Label("LINES: " + str(app.linesCleared),endPanel.left + 50,500,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endLevelText = Label("LEVEL: " + str(app.level),endPanel.left + 50,550,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endHighScoreText = Label("HIGH SCORE: 0",app.width/2,450,fill='white',bold=True,size=23,font='Tears in Rain',align='left')
+endNewHighScoreText = Label("NEW HIGH SCORE!",app.width/2,500,fill='gold',bold=True,size=26,font='Tears in Rain')
+endNewHighScoreText.visible = False
 endTimeText = Label(timeLabel.value,app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
 endRestartText = Label('PRESS "R" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='Tears in Rain')
-endGroup = Group(endBG,endPanel,endIcon,endText,endScoreText,endLinesText,endLevelText,endTimeText,endRestartText)
+endGroup = Group(endBG, endPanel, endIcon, endText,endScoreText, endLinesText, endLevelText,endTimeText, endRestartText,endHighScoreText, endNewHighScoreText)
 endGroup.visible=False
+
 
 def updateUI():
     scoreLabel.value = f"Score: {app.score}"
@@ -378,21 +384,46 @@ def onKeyPress(key):
         
     if key == 'r':
         if app.playing == 'end':
+            # Save high score BEFORE resetting
             if app.score > load_high_score():
                 save_high_score()
+
+            # Reset game state
             app.score = 0
             app.linesCleared = 0
-            app.level = 0
+            app.level = 1   # start at 1, not 0
             app.startTime = None
+            app.timerThing = 0
+
+            # Reset pieces
+            placedPieces.clear()
+            curPiece.clear()
+            previewBlocks.clear()
+            ghostPiece.clear()
+
             refillBag()
+            app.currentType = getNextPiece()
+            app.nextType = getNextPiece()
+
             newPiece(app.currentType, 'cur')
             newPiece(app.nextType, 'next')
-            app.playing=False
-            titleGroup.visible=True
-            endGroup.visible=False
-            placedPieces.clear()
-            
-            pass
+
+            # Reset UI
+            updateUI()
+            timeLabel.value = "Time: 00:00"
+
+            # Switch screens
+            app.playing = False
+            endGroup.visible = False
+            titleGroup.visible = True
+
+            # Music handling
+            tetrisEndMusic.pause()
+            tetrisMusic.pause()
+            tetrisTitleMusic.play(loop=True, restart=True)
+
+            app.newHighScore = False
+            endNewHighScoreText.visible = False
 
     if key == 'z':
         if (app.playing == True):
@@ -599,13 +630,32 @@ def updateGhost():
 def onStep():
     if (app.playing == True):
         updateUI()
+        endScoreText.left = endPanel.left + 50
+        endLinesText.left = endPanel.left + 50
+        endLevelText.left = endPanel.left + 50
+        endTimeText.left = endPanel.left + 50
+        endHighScoreText.right = endPanel.right - 50
+        endNewHighScoreText.right = endPanel.right - 50
+
         if (curPiece.top < 20):
             curPiece.top = 20
         if (placedPieces.top == 20):
             app.playing = 'end'
             tetrisMusic.pause()
-            endGroup.visible=True
-            tetrisEndMusic.play(restart=True,loop=True)
+            endGroup.visible = True
+            tetrisEndMusic.play(restart=True, loop=True)
+
+            # Check high score
+            if app.score > app.highScore:
+                app.highScore = app.score
+                app.newHighScore = True
+                save_high_score()
+            else:
+                app.newHighScore = False
+
+            # Update end screen text
+            endHighScoreText.value = f"HIGH SCORE: {app.highScore}"
+            endNewHighScoreText.visible = app.newHighScore
 
         endLinesText.value = 'LINES: ' + str(app.linesCleared)
         endScoreText.value = 'SCORE: ' + str(app.score)
@@ -634,5 +684,8 @@ def onStep():
                     b.centerY += app.blockSize
             else:
                 lockPiece()
+    if app.playing == 'end' and app.newHighScore:
+        app.steps += 1
+        endNewHighScoreText.opacity = 50 + 50 * abs(math.sin(app.steps * 0.15))
 
 cmu_graphics.run()
