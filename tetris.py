@@ -39,15 +39,22 @@ app.offsetY = 20
 app.cols = 10
 app.timerThing = 0
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FILE_PATH = os.path.join(BASE_DIR, 'data', 'Tetris', 'save.txt')
+
 def save_high_score():
-    with open('data\\Tetris\\save.txt','w') as file:
+    os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
+    with open(SAVE_PATH, 'w') as file:
         file.write(str(app.score))
 
 def load_high_score():
     try:
-        with open('data\\Tetris\\save.txt','r') as file:
-            return int(file.read())
-    except (FileNotFoundError, ValueError):
+        # 2. Use the absolute path
+        with open(FILE_PATH, 'r') as file:
+            content = file.read().strip()
+            return int(content) if content else 0
+    except (FileNotFoundError, ValueError) as e:
+        # Optional: print(f"Note: High score not loaded ({e})")
         return 0
 
 pieceList = [
