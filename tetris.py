@@ -546,6 +546,23 @@ def clearRows():
         levelLabel.value = f"Level: {app.level}"
 
 #locks pieces in place when they can no longer move
+def gameOver():
+    app.playing = 'end'
+    tetrisMusic.pause()
+    endGroup.visible = True
+    tetrisEndMusic.play(restart=True, loop=True)
+
+    if app.score > app.highScore:
+        app.highScore = app.score
+        app.newHighScore = True
+        save_high_score()
+    else:
+        app.newHighScore = False
+
+    endHighScoreText.value = f"HIGH SCORE: {app.highScore}"
+    endNewHighScoreText.visible = app.newHighScore
+
+
 def lockPiece():
     if (app.playing == True):
         for block in curPiece:
@@ -553,13 +570,18 @@ def lockPiece():
 
         curPiece.clear()
 
+        clearRows()
+
         app.currentType = app.nextType
         app.nextType = getNextPiece()
 
         newPiece(app.currentType, 'cur')
         newPiece(app.nextType, 'next')
 
-        clearRows()
+        if not canMove(0, 0):
+            gameOver()
+            return
+
 
 def updateGhost():
     if (app.playing == True):
