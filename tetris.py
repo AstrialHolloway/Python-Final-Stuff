@@ -11,6 +11,7 @@ import sys
 import random
 import time
 import math
+import json
 
 #Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
@@ -22,8 +23,12 @@ app.width = 1280
 app.height = 740
 app.volume = 0.1
 
+app.hardMode = False
 app.pieceBag = []
-app.level = 3
+app.selectedDifficulty = 'Normal'
+app.selectedLevel = 1
+app.startLevel = 1
+app.level = 1
 app.playing = False
 app.steps = 0
 app.stepCount = 0
@@ -44,25 +49,45 @@ FILE_PATH = os.path.join(BASE_DIR, 'data', 'Tetris', 'save.txt')
 def save_high_score():
     os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
     with open(FILE_PATH, 'w') as file:
-        file.write(str(app.score))
+        json.dump({
+            'normal': app.highScoreNormal,
+            'hard': app.highScoreHard
+        }, file)
 
 def load_high_score():
     try:
         with open(FILE_PATH, 'r') as file:
-            content = file.read().strip()
-            return int(content) if content else 0
-    except (FileNotFoundError, ValueError) as e:
+            data = json.load(file)
+
+            if isinstance(data, dict):
+                normal = int(data.get('normal', 0))
+                hard = int(data.get('hard', 0))
+            elif isinstance(data, int):
+                normal = data
+                hard = 0
+            else:
+                normal = 0
+                hard = 0
+
+            return {'normal': normal, 'hard': hard}
+    except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
         print(f"Note: High score not loaded ({e})")
-        return 0
-    
-app.highScore = load_high_score()
+        return {'normal': 0, 'hard': 0}
+
+scores = load_high_score()
+app.highScoreNormal = scores['normal']
+app.highScoreHard = scores['hard']
+app.highScore = app.highScoreNormal
 app.newHighScore = False
 
 pieceList = [
-    'Z', 'S', 'T', 'O', 'I',
+    'Z', 'S', 't', 'O', 'I',
     'L', 'J'
 ]
-#pieceList = ['U', '+', 'b', 'd', 'u', '+', 'b', 'U', '+', 'b', 'd','/', '\']
+pieceListHardMode = [
+    'Z', 'S', 't', 'O', 'I',
+    'L', 'J', 'U', 'T'
+]
 
 tetrisTitleMusic = Sound('assets\\tetris\\sounds\\title.mp3')
 tetrisTitleMusic.play(loop=True)
@@ -161,10 +186,20 @@ titleIcon.width=titleIcon.width*0.5
 titleIcon.height=titleIcon.height*0.5
 titleIcon.centerX=app.width/2
 titleIcon.centerY=250
-titleStartText = Label('PRESS "SPACE" TO START!',app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
+titleStartText = Label('PRESS "SPACE" TO SELECT MODE',app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
 titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
 titleGroup = Group(titleBG,titlePanel,titleIcon,titleStartText,titleControlsText)
 titleGroup.visible=True
+
+selectionBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
+selectionPanel = Rect(app.width/2 - 350,80,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
+selectionTitle = Label('SELECT DIFFICULTY & LEVEL',app.width/2,140,fill='white',bold=True,size=34,font='Tears in Rain')
+selectionDifficultyText = Label(f'Difficulty: {app.selectedDifficulty}',app.width/2,240,fill='white',bold=True,size=28,font='Tears in Rain')
+selectionLevelText = Label(f'Level: {app.selectedLevel}',app.width/2,320,fill='white',bold=True,size=28,font='Tears in Rain')
+selectionHelpText = Label('LEFT / RIGHT = Difficulty | UP / DOWN = Level | SPACE = Start',app.width/2,420,fill='white',bold=True,size=17,font='Tears in Rain')
+selectionNoteText = Label('Press ESC to go back to title',app.width/2,490,fill='white',bold=True,size=18,font='Tears in Rain')
+selectionGroup = Group(selectionBG, selectionPanel, selectionTitle, selectionDifficultyText, selectionLevelText, selectionHelpText, selectionNoteText)
+selectionGroup.visible=False
 
 controlsBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
 controlsPanel = Rect(app.width/2 - 350,80,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
@@ -176,7 +211,8 @@ controlsdrop = Label("SPACE : Hard Drop", app.width/2, 320,fill='white', bold=Tr
 controlsrotateleft = Label("Z : Rotate Left", app.width/2, 380,fill='white', bold=True, size=24, font='Tears in Rain')
 controlsrotateright = Label("X : Rotate Right", app.width/2, 420,fill='white', bold=True, size=24, font='Tears in Rain')
 controlsrestart = Label("R : Restart Game", app.width/2, 480,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsGroup = Group(controlsBG,controlsPanel,controlsText,controlsleft,controlsright,controlsdown,controlsdrop,controlsrotateleft,controlsrotateright,controlsrestart)
+controlsback = Label("ESC : Back", app.width/2, 520,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsGroup = Group(controlsBG,controlsPanel,controlsText,controlsleft,controlsright,controlsdown,controlsdrop,controlsrotateleft,controlsrotateright,controlsrestart,controlsback)
 controlsGroup.visible = False
 
 
@@ -205,6 +241,22 @@ def updateUI():
     linesLabel.value = f"Lines: {app.linesCleared}"
     levelLabel.value = f"Level: {app.level}"
 
+
+def updateSelectionLabels():
+    selectionDifficultyText.value = f'Difficulty: {app.selectedDifficulty}'
+    selectionLevelText.value = f'Level: {app.selectedLevel}'
+
+def changeSelectionDifficulty():
+    if app.selectedDifficulty == 'Normal':
+        app.selectedDifficulty = 'Hard'
+    else:
+        app.selectedDifficulty = 'Normal'
+    updateSelectionLabels()
+
+def changeSelectionLevel(delta):
+    app.selectedLevel = max(1, min(15, app.selectedLevel + delta))
+    updateSelectionLabels()
+
 def createBlock(x, y, fillColor, borderColor):
     g = Group()
 
@@ -230,7 +282,7 @@ def getPieceData(t):
         return [(0,0),(1,0),(1,1),(2,1)], ('red', 'darkRed')
     if t == 'S':
         return [(1,0),(2,0),(0,1),(1,1)], ('lime', 'limeGreen')
-    if t == 'T':
+    if t == 't':
         return [(0,0),(1,0),(2,0),(1,1)], ('magenta', 'darkViolet')
     if t == 'O':
         return [(0,0),(1,0),(0,1),(1,1)], ('yellow', 'gold')
@@ -240,9 +292,16 @@ def getPieceData(t):
         return [(0,0),(0,1),(0,2),(1,2)], ('orange', 'tomato')
     if t == 'J':
         return [(1,0),(1,1),(1,2),(0,2)], ('blue', 'midnightBlue')
+    if t == 'U':
+        return [(0,0),(0,1),(1,1),(2,1),(2,0)], ('turquoise', 'darkTurquoise')
+    if t == 'T':
+        return [(0,0),(1,0),(2,0),(1,1),(1,2)], ('purple', 'indigo')
 
 def refillBag():
-    app.pieceBag = pieceList.copy()
+    if app.hardMode == False:
+        app.pieceBag = pieceList.copy()
+    else:
+        app.pieceBag = pieceListHardMode.copy()
     random.shuffle(app.pieceBag)
 
 def getNextPiece():
@@ -385,7 +444,13 @@ def onKeyPress(key):
     if key == 'r':
         if app.playing == 'end':
             # Save high score BEFORE resetting
-            if app.score > load_high_score():
+            currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+            if app.score > currentHigh:
+                if app.hardMode:
+                    app.highScoreHard = app.score
+                else:
+                    app.highScoreNormal = app.score
+                app.highScore = app.score
                 save_high_score()
 
             # Reset game state
@@ -442,6 +507,10 @@ def onKeyPress(key):
             app.playing = False
             titleGroup.visible=True
             controlsGroup.visible=False
+        elif app.playing == 'startMenu':
+            app.playing = False
+            selectionGroup.visible=False
+            titleGroup.visible=True
 
     if key == 'space':
         if (app.playing == True):    
@@ -454,12 +523,47 @@ def onKeyPress(key):
 
             app.score += dropDistance * 2
             lockPiece()
-        if (app.playing == False):
-            app.playing = True
+        elif app.playing == 'startMenu':
+            app.hardMode = (app.selectedDifficulty == 'Hard')
+            app.startLevel = app.selectedLevel
+            app.level = app.startLevel
+            app.linesCleared = 0
+            app.score = 0
             app.startTime = time.time()
+            app.timerThing = 0
+
+            placedPieces.clear()
+            curPiece.clear()
+            previewBlocks.clear()
+            ghostPiece.clear()
+
+            refillBag()
+            app.currentType = getNextPiece()
+            app.nextType = getNextPiece()
+
+            newPiece(app.currentType, 'cur')
+            newPiece(app.nextType, 'next')
+
+            updateUI()
+            timeLabel.value = "Time: 00:00"
+
+            app.playing = True
+            selectionGroup.visible=False
             titleGroup.visible=False
             tetrisTitleMusic.pause()
             tetrisMusic.play(loop=True,restart=True)
+        elif (app.playing == False):
+            app.playing = 'startMenu'
+            titleGroup.visible=False
+            selectionGroup.visible=True
+            updateSelectionLabels()
+
+    if app.playing == 'startMenu' and key in ['left', 'right', 'a', 'd']:
+        changeSelectionDifficulty()
+    if app.playing == 'startMenu' and key in ['up']:
+        changeSelectionLevel(1)
+    if app.playing == 'startMenu' and key in ['down']:
+        changeSelectionLevel(-1)
 
     if key in ['a','left']:
         if (app.playing == True):    
@@ -538,7 +642,7 @@ def clearRows():
         elif lines == 4:
             app.score += 1200 * levelMultiplier
 
-        app.level = (app.linesCleared // 10) + 1
+        app.level = app.startLevel + (app.linesCleared // 10)
 
         # update labels
         scoreLabel.value = f"Score: {app.score}"
@@ -552,11 +656,17 @@ def gameOver():
     endGroup.visible = True
     tetrisEndMusic.play(restart=True, loop=True)
 
-    if app.score > app.highScore:
+    currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+    if app.score > currentHigh:
+        if app.hardMode:
+            app.highScoreHard = app.score
+        else:
+            app.highScoreNormal = app.score
         app.highScore = app.score
         app.newHighScore = True
         save_high_score()
     else:
+        app.highScore = currentHigh
         app.newHighScore = False
 
     endHighScoreText.value = f"HIGH SCORE: {app.highScore}"
@@ -668,11 +778,17 @@ def onStep():
             tetrisEndMusic.play(restart=True, loop=True)
 
             # Check high score
-            if app.score > app.highScore:
+            currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+            if app.score > currentHigh:
+                if app.hardMode:
+                    app.highScoreHard = app.score
+                else:
+                    app.highScoreNormal = app.score
                 app.highScore = app.score
                 app.newHighScore = True
                 save_high_score()
             else:
+                app.highScore = currentHigh
                 app.newHighScore = False
 
             # Update end screen text
