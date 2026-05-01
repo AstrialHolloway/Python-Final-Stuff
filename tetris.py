@@ -80,6 +80,10 @@ app.highScoreHard = scores['hard']
 app.highScore = app.highScoreNormal
 app.newHighScore = False
 
+pieceListEasyMode = [
+    't', 'O', 'I',
+    'L', 'J'
+]
 pieceList = [
     'Z', 'S', 't', 'O', 'I',
     'L', 'J'
