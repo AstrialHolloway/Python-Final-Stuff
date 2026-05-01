@@ -50,6 +50,7 @@ def save_high_score():
     os.makedirs(os.path.dirname(FILE_PATH), exist_ok=True)
     with open(FILE_PATH, 'w') as file:
         json.dump({
+            'easy': app.highScoreEasy,
             'normal': app.highScoreNormal,
             'hard': app.highScoreHard
         }, file)
@@ -60,25 +61,30 @@ def load_high_score():
             data = json.load(file)
 
             if isinstance(data, dict):
+                easy = int(data.get('easy', 0))
                 normal = int(data.get('normal', 0))
                 hard = int(data.get('hard', 0))
             elif isinstance(data, int):
+                easy = 0
                 normal = data
                 hard = 0
             else:
+                easy = 0
                 normal = 0
                 hard = 0
 
-            return {'normal': normal, 'hard': hard}
+            return {'easy': easy, 'normal': normal, 'hard': hard}
     except (FileNotFoundError, ValueError, json.JSONDecodeError) as e:
         print(f"Note: High score not loaded ({e})")
         return {'normal': 0, 'hard': 0}
 
 scores = load_high_score()
+app.highScoreEasy = scores['easy']
 app.highScoreNormal = scores['normal']
 app.highScoreHard = scores['hard']
 app.highScore = app.highScoreNormal
 app.newHighScore = False
+app.currentDifficulty = app.selectedDifficulty
 
 pieceListEasyMode = [
     't', 'O', 'I',
@@ -251,10 +257,12 @@ def updateSelectionLabels():
     selectionLevelText.value = f'Level: {app.selectedLevel}'
 
 def changeSelectionDifficulty():
-    if app.selectedDifficulty == 'Normal':
+    if app.selectedDifficulty == 'Easy':
+        app.selectedDifficulty = 'Normal'
+    elif app.selectedDifficulty == 'Normal':
         app.selectedDifficulty = 'Hard'
     else:
-        app.selectedDifficulty = 'Normal'
+        app.selectedDifficulty = 'Easy'
     updateSelectionLabels()
 
 def changeSelectionLevel(delta):
@@ -302,10 +310,12 @@ def getPieceData(t):
         return [(0,0),(1,0),(2,0),(1,1),(1,2)], ('purple', 'indigo')
 
 def refillBag():
-    if app.hardMode == False:
-        app.pieceBag = pieceList.copy()
-    else:
+    if app.currentDifficulty == 'Easy':
+        app.pieceBag = pieceListEasyMode.copy()
+    elif app.currentDifficulty == 'Hard':
         app.pieceBag = pieceListHardMode.copy()
+    else:
+        app.pieceBag = pieceList.copy()
     random.shuffle(app.pieceBag)
 
 def getNextPiece():
@@ -448,9 +458,17 @@ def onKeyPress(key):
     if key == 'r':
         if app.playing == 'end':
             # Save high score BEFORE resetting
-            currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+            if app.currentDifficulty == 'Easy':
+                currentHigh = app.highScoreEasy
+            elif app.currentDifficulty == 'Hard':
+                currentHigh = app.highScoreHard
+            else:
+                currentHigh = app.highScoreNormal
+
             if app.score > currentHigh:
-                if app.hardMode:
+                if app.currentDifficulty == 'Easy':
+                    app.highScoreEasy = app.score
+                elif app.currentDifficulty == 'Hard':
                     app.highScoreHard = app.score
                 else:
                     app.highScoreNormal = app.score
@@ -528,7 +546,8 @@ def onKeyPress(key):
             app.score += dropDistance * 2
             lockPiece()
         elif app.playing == 'startMenu':
-            app.hardMode = (app.selectedDifficulty == 'Hard')
+            app.currentDifficulty = app.selectedDifficulty
+            app.hardMode = (app.currentDifficulty == 'Hard')
             app.startLevel = app.selectedLevel
             app.level = app.startLevel
             app.linesCleared = 0
@@ -660,9 +679,17 @@ def gameOver():
     endGroup.visible = True
     tetrisEndMusic.play(restart=True, loop=True)
 
-    currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+    if app.currentDifficulty == 'Easy':
+        currentHigh = app.highScoreEasy
+    elif app.currentDifficulty == 'Hard':
+        currentHigh = app.highScoreHard
+    else:
+        currentHigh = app.highScoreNormal
+
     if app.score > currentHigh:
-        if app.hardMode:
+        if app.currentDifficulty == 'Easy':
+            app.highScoreEasy = app.score
+        elif app.currentDifficulty == 'Hard':
             app.highScoreHard = app.score
         else:
             app.highScoreNormal = app.score
@@ -782,9 +809,17 @@ def onStep():
             tetrisEndMusic.play(restart=True, loop=True)
 
             # Check high score
-            currentHigh = app.highScoreHard if app.hardMode else app.highScoreNormal
+            if app.currentDifficulty == 'Easy':
+                currentHigh = app.highScoreEasy
+            elif app.currentDifficulty == 'Hard':
+                currentHigh = app.highScoreHard
+            else:
+                currentHigh = app.highScoreNormal
+
             if app.score > currentHigh:
-                if app.hardMode:
+                if app.currentDifficulty == 'Easy':
+                    app.highScoreEasy = app.score
+                elif app.currentDifficulty == 'Hard':
                     app.highScoreHard = app.score
                 else:
                     app.highScoreNormal = app.score
