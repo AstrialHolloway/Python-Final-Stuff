@@ -256,13 +256,14 @@ def updateSelectionLabels():
     selectionDifficultyText.value = f'Difficulty: {app.selectedDifficulty}'
     selectionLevelText.value = f'Level: {app.selectedLevel}'
 
-def changeSelectionDifficulty():
-    if app.selectedDifficulty == 'Easy':
-        app.selectedDifficulty = 'Normal'
-    elif app.selectedDifficulty == 'Normal':
-        app.selectedDifficulty = 'Hard'
-    else:
-        app.selectedDifficulty = 'Easy'
+def changeSelectionDifficulty(direction):
+    difficulties = ['Easy', 'Normal', 'Hard']
+    current_index = difficulties.index(app.selectedDifficulty)
+    if direction == 'next':
+        new_index = (current_index + 1) % len(difficulties)
+    elif direction == 'prev':
+        new_index = (current_index - 1) % len(difficulties)
+    app.selectedDifficulty = difficulties[new_index]
     updateSelectionLabels()
 
 def changeSelectionLevel(delta):
@@ -581,8 +582,10 @@ def onKeyPress(key):
             selectionGroup.visible=True
             updateSelectionLabels()
 
-    if app.playing == 'startMenu' and key in ['left', 'right', 'a', 'd']:
-        changeSelectionDifficulty()
+    if app.playing == 'startMenu' and key in ['right', 'd']:
+        changeSelectionDifficulty('next')
+    if app.playing == 'startMenu' and key in ['left', 'a']:
+        changeSelectionDifficulty('prev')
     if app.playing == 'startMenu' and key in ['up']:
         changeSelectionLevel(1)
     if app.playing == 'startMenu' and key in ['down']:
