@@ -87,8 +87,7 @@ app.newHighScore = False
 app.currentDifficulty = app.selectedDifficulty
 
 pieceListEasyMode = [
-    't', 'O', 'I',
-    'L', 'J'
+    't', 'I','L', 'J'
 ]
 pieceList = [
     'Z', 'S', 't', 'O', 'I',
