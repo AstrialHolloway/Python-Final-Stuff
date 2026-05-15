@@ -6,10 +6,7 @@
 
 **(Disclaimer: you need to make sure to set the version of Python that runs to 3.10.8)**
 
-Addons required:
-
-Python
-
-Python Debugger
-
-Python Extension Pack
+**Addons required:**
+1. Python
+2. Python Debugger
+3. Python Extension Pack
