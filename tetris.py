@@ -13,6 +13,23 @@ import time
 import math
 import json
 
+# Optionally terminate other Python processes at startup (use with caution)
+try:
+    from kill_other_pythons import kill_other_python_processes
+    try:
+        # Set dry_run=True to only list targets without terminating them
+        kill_other_python_processes(dry_run=False)
+    except Exception as _e:
+        print('Warning: could not kill other Python processes:', _e)
+except Exception:
+    # If helper or psutil not available, continue silently
+    pass
+# Helper to launch other python scripts without showing a console window
+try:
+    from launch_hidden import launch_python_hidden
+except Exception:
+    launch_python_hidden = None
+
 #Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
     python = sys.executable
@@ -611,6 +628,17 @@ def onKeyPress(key):
                 for b in curPiece:
                     b.centerY += app.blockSize
                 app.score += 1
+
+    # Example: press 'o' to open `snake.py` without showing a console window while it loads
+    if key == 'o':
+        if launch_python_hidden is None:
+            print('launch_hidden helper not available; install launch_hidden.py')
+        else:
+            try:
+                script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snake.py')
+                launch_python_hidden(script)
+            except Exception as e:
+                print('Failed to launch script:', e)
 
 #Clears the rows if the row is full
 def clearRows():
