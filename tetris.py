@@ -137,6 +137,7 @@ setVolume()
 
 # background stuff, yeah
 bg = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
+app.background = gradient('black', 'midnightBlue', start='top')
 
 playfieldWidth = app.cols * app.blockSize
 playfieldHeight = int((app.height - app.offsetY) // app.blockSize) * app.blockSize
@@ -212,9 +213,10 @@ titleIcon.width=titleIcon.width*0.5
 titleIcon.height=titleIcon.height*0.5
 titleIcon.centerX=app.width/2
 titleIcon.centerY=250
-titleStartText = Label('PRESS "SPACE" TO SELECT MODE',app.width/2,500,fill='white',bold=True,size=30,font='Tears in Rain')
+titleAltPlay = Label('NOW AVALABLE ON ARCADE OUTSIDE!',app.width/2,490,fill='yellow',bold=True,size=30,font='Tears in Rain')
+titleStartText = Label('PRESS "SPACE" TO SELECT MODE',app.width/2,550,fill='white',bold=True,size=30,font='Tears in Rain')
 titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
-titleGroup = Group(titleBG,titlePanel,titleIcon,titleStartText,titleControlsText)
+titleGroup = Group(titleBG,titlePanel,titleIcon,titleStartText,titleControlsText,titleAltPlay)
 titleGroup.visible=True
 
 selectionBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
@@ -407,6 +409,9 @@ def rotatePiece(direction):
     if len(curPiece) == 0:
         return
 
+    if app.currentType == 'O':
+        return
+
     pivot = next(iter(curPiece))
 
     newPositions = []
@@ -532,10 +537,12 @@ def onKeyPress(key):
     if key == 'z':
         if (app.playing == True):
             rotatePiece("left")
+            updateGhost()
 
     if key == 'x':
         if (app.playing == True):
             rotatePiece("right")
+            updateGhost()
     if key == 'tab':
         if (app.playing == False):
             app.playing = 'controls'
@@ -613,6 +620,9 @@ def onKeyPress(key):
                 moveSound.play(restart=True)
                 for b in curPiece:
                     b.centerX -= app.blockSize
+                app.moveDelay = app.moveCooldown
+                updateGhost()
+            return
 
     if key in ['d','right']:
         if (app.playing == True):
@@ -620,6 +630,9 @@ def onKeyPress(key):
                 moveSound.play(restart=True)
                 for b in curPiece:
                     b.centerX += app.blockSize
+                app.moveDelay = app.moveCooldown
+                updateGhost()
+            return
 
     if key in ['s','down']:
         if (app.playing == True):
@@ -628,6 +641,52 @@ def onKeyPress(key):
                 for b in curPiece:
                     b.centerY += app.blockSize
                 app.score += 1
+                app.moveDelay = app.moveCooldown
+                updateGhost()
+            return
+
+def onKeyHold(keys, modifiers):
+    if app.playing != True:
+        return
+
+    if app.moveDelay > 0:
+        app.moveDelay -= 1
+        return
+
+    lowerKeys = {k.lower() for k in keys}
+
+    if 's' in lowerKeys or 'down' in lowerKeys:
+        if canMove(0, app.blockSize):
+            moveSound.play(restart=True)
+            for b in curPiece:
+                b.centerY += app.blockSize
+            app.score += 1
+            app.moveDelay = app.moveCooldown
+            updateGhost()
+        return
+
+    if 'a' in lowerKeys or 'left' in lowerKeys:
+        if canMove(-app.blockSize, 0):
+            moveSound.play(restart=True)
+            for b in curPiece:
+                b.centerX -= app.blockSize
+            app.moveDelay = app.moveCooldown
+            updateGhost()
+        return
+
+    if 'd' in lowerKeys or 'right' in lowerKeys:
+        if canMove(app.blockSize, 0):
+            moveSound.play(restart=True)
+            for b in curPiece:
+                b.centerX += app.blockSize
+            app.moveDelay = app.moveCooldown
+            updateGhost()
+        return
+
+
+def onKeyRelease(key, modifiers):
+    if key.lower() in ['a','left','d','right','s','down']:
+        app.moveDelay = 0
 
     # Example: press 'o' to open `snake.py` without showing a console window while it loads
     if key == 'o':
