@@ -13,23 +13,6 @@ import time
 import math
 import json
 
-# Optionally terminate other Python processes at startup (use with caution)
-try:
-    from kill_other_pythons import kill_other_python_processes
-    try:
-        # Set dry_run=True to only list targets without terminating them
-        kill_other_python_processes(dry_run=False)
-    except Exception as _e:
-        print('Warning: could not kill other Python processes:', _e)
-except Exception:
-    # If helper or psutil not available, continue silently
-    pass
-# Helper to launch other python scripts without showing a console window
-try:
-    from launch_hidden import launch_python_hidden
-except Exception:
-    launch_python_hidden = None
-
 #Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
     python = sys.executable
@@ -459,20 +442,20 @@ def rotatePiece(direction):
         block.centerX, block.centerY = newPositions[i]
 
 def onKeyPress(key):
-    if key == '-':
+    if key == '-': #Map to button 
         if (app.volume > 0):
             app.volume -= 0.1
         setVolume()
         
-    if key == '=':
+    if key == '=': #Map to button 
         if (app.volume < 0.5):
             app.volume += 0.1
         setVolume()
         
-    if key == 'p':
+    if key == 'p': #!!DO NOT MAP TO ANY BUTTON. THIS CLOSES THE PROGRAM TO RESTART IT!!
         restart_program()
         
-    if key == 'r':
+    if key == 'r': #Map to button 10
         if app.playing == 'end':
             # Save high score BEFORE resetting
             if app.currentDifficulty == 'Easy':
@@ -529,19 +512,21 @@ def onKeyPress(key):
             app.newHighScore = False
             endNewHighScoreText.visible = False
 
-    if key == 'z':
+    if key == 'z': #Map to button 11
         if (app.playing == True):
             rotatePiece("left")
 
-    if key == 'x':
+    if key == 'x': #Map to button 
         if (app.playing == True):
             rotatePiece("right")
-    if key == 'tab':
+          
+    if key == 'tab': #Map to button 
         if (app.playing == False):
             app.playing = 'controls'
             titleGroup.visible=False
             controlsGroup.visible=True
-    if key == 'escape':
+          
+    if key == 'escape': #Map to Button
         if app.playing == 'controls':
             app.playing = False
             titleGroup.visible=True
@@ -551,7 +536,7 @@ def onKeyPress(key):
             selectionGroup.visible=False
             titleGroup.visible=True
 
-    if key == 'space':
+    if key == 'space': #Map to button 12
         if (app.playing == True):    
             dropDistance = 0
 
@@ -562,6 +547,7 @@ def onKeyPress(key):
 
             app.score += dropDistance * 2
             lockPiece()
+          
         elif app.playing == 'startMenu':
             app.currentDifficulty = app.selectedDifficulty
             app.hardMode = (app.currentDifficulty == 'Hard')
@@ -598,47 +584,36 @@ def onKeyPress(key):
             selectionGroup.visible=True
             updateSelectionLabels()
 
-    if app.playing == 'startMenu' and key in ['right', 'd']:
+    if app.playing == 'startMenu' and key in ['right']: #Map to joystick right
         changeSelectionDifficulty('next')
-    if app.playing == 'startMenu' and key in ['left', 'a']:
+    if app.playing == 'startMenu' and key in ['left']: #Map to joystick left
         changeSelectionDifficulty('prev')
-    if app.playing == 'startMenu' and key in ['up']:
+    if app.playing == 'startMenu' and key in ['up']: #Map to joystick up
         changeSelectionLevel(1)
-    if app.playing == 'startMenu' and key in ['down']:
+    if app.playing == 'startMenu' and key in ['down']: #Map to joystick down
         changeSelectionLevel(-1)
 
-    if key in ['a','left']:
+    if key in ['left']: #Map to joystick left
         if (app.playing == True):    
             if canMove(-app.blockSize, 0):
                 moveSound.play(restart=True)
                 for b in curPiece:
                     b.centerX -= app.blockSize
 
-    if key in ['d','right']:
+    if key in ['right']: #Map to joystick right
         if (app.playing == True):
             if canMove(app.blockSize, 0):
                 moveSound.play(restart=True)
                 for b in curPiece:
                     b.centerX += app.blockSize
 
-    if key in ['s','down']:
+    if key in ['down']: #Map to joystick down
         if (app.playing == True):
             if canMove(0, app.blockSize):
                 moveSound.play(restart=True)
                 for b in curPiece:
                     b.centerY += app.blockSize
                 app.score += 1
-
-    # Example: press 'o' to open `snake.py` without showing a console window while it loads
-    if key == 'o':
-        if launch_python_hidden is None:
-            print('launch_hidden helper not available; install launch_hidden.py')
-        else:
-            try:
-                script = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'snake.py')
-                launch_python_hidden(script)
-            except Exception as e:
-                print('Failed to launch script:', e)
 
 #Clears the rows if the row is full
 def clearRows():
