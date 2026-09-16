@@ -13,6 +13,7 @@ import time
 import math
 import json
 
+# Use python versions v3.10.8 - v3.12.0
 # Optionally terminate other Python processes at startup (use with caution)
 try:
     from kill_other_pythons import kill_other_python_processes
