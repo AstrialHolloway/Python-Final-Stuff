@@ -12,6 +12,8 @@ import random
 import time
 import math
 import json
+import subprocess
+
 
 # Use python versions v3.10.8 - v3.12.0
 # Optionally terminate other Python processes at startup (use with caution)
@@ -33,8 +35,9 @@ except Exception:
 
 #Restarts program so I don't have to mess with closing and opening the exe thing again
 def restart_program():
-    python = sys.executable
-    os.execv(python, [python] + sys.argv)
+    script = os.path.abspath(__file__)
+    subprocess.Popen([sys.executable, script], cwd=os.path.dirname(script))
+    os._exit(0)
 
 #vars
 app.width = 1280
