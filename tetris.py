@@ -6,6 +6,8 @@
 #I'm too lazy to add good comments, so don't expect super organized comments lol
 
 from cmu_graphics import *
+from cmu_graphics import pygameEvent
+from cmu_graphics.libs import pygame_loader as pygame
 import os
 import sys
 import random
@@ -51,6 +53,13 @@ app.selectedLevel = 1
 app.startLevel = 1
 app.level = 1
 app.playing = False
+app.heldType = None
+app.canHold = True
+app.unlockedAchievements = set()
+app.achievementQueue = []
+app.achievementPopupPhase = 'hidden'
+app.achievementPopupTimer = 0
+app.konamiProgress = 0
 app.steps = 0
 app.stepCount = 0
 app.score = 0
@@ -61,8 +70,17 @@ app.moveCooldown = 5
 app.blockSize = 50
 app.offsetX = 400
 app.offsetY = 20
+app.layoutOffsetY = 0
+app.previousWindowWidth = app.width
+app.previousWindowHeight = app.height
+app.fullscreen = False
+app.windowedSize = (app.width, app.height)
 app.cols = 10
 app.timerThing = 0
+
+MAX_SELECTABLE_LEVEL = 15
+CLASSIC_TETRIS_MAX_LEVEL = 29
+KONAMI_CODE = ['up', 'up', 'down', 'down', 'left', 'right', 'left', 'right', 'b', 'a']
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FILE_PATH = os.path.join(BASE_DIR, 'data', 'Tetris', 'save.txt')
@@ -145,6 +163,7 @@ app.background = gradient('black', 'midnightBlue', start='top')
 
 playfieldWidth = app.cols * app.blockSize
 playfieldHeight = int((app.height - app.offsetY) // app.blockSize) * app.blockSize
+PLAYFIELD_BOTTOM = 720
 
 playfieldPanel = Rect(
     app.offsetX - 10,
@@ -192,6 +211,7 @@ placedPieces = Group()
 ghostPiece = Group()
 curPiece = Group()
 previewBlocks = Group()
+holdPieceBlocks = Group()
 
 tetrisInGameIconImage = 'assets\\tetris\\images\\logo.png'
 tetrisInGameIcon = Image(tetrisInGameIconImage, 0, 0)
@@ -209,69 +229,337 @@ levelLabel = Label("Level: 1", 1100, 320 + 100, size=18, fill="white", bold=True
 
 timeLabel = Label("Time: 00:00", 1100, 350 + 100, size=18, fill="white", bold=True,font='Tears in Rain')
 
+holdBox = Rect(app.offsetX - 380, app.offsetY + 80, 260, 210, fill='black', opacity=35, border='white', borderWidth=2)
+holdTitle = Label('HOLD (C)', app.offsetX - 250, app.offsetY + 115, size=22, fill='white', bold=True, font='Tears in Rain')
+holdEmptyText = Label('EMPTY', app.offsetX - 250, app.offsetY + 205, size=18, fill='grey', bold=True, font='Tears in Rain')
+holdUIGroup = Group(holdBox, holdTitle, holdEmptyText, holdPieceBlocks)
+holdUIGroup.visible = False
+
+pauseBG = Rect(0, 0, app.width, app.height, fill='black', opacity=65)
+pausePanel = Rect(app.width / 2 - 250, app.height / 2 - 110, 500, 220, fill=gradient('dimGrey', 'black'), opacity=95, border='white', borderWidth=2)
+pauseTitle = Label('PAUSED', app.width / 2, app.height / 2 - 45, fill='gold', bold=True, size=38, font='Tears in Rain')
+pauseInstructions = Label('PRESS ENTER TO RESUME', app.width / 2, app.height / 2 + 30, fill='white', bold=True, size=22, font='Tears in Rain')
+pauseGroup = Group(pauseBG, pausePanel, pauseTitle, pauseInstructions)
+pauseGroup.visible = False
 
 titleBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
-titlePanel = Rect(app.width/2 - 350,15,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
+titlePanel = Rect(app.width/2 - 350,30,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
 titleIcon = Image(tetrisInGameIconImage,0,0)
 titleIcon.width=titleIcon.width*0.5
 titleIcon.height=titleIcon.height*0.5
 titleIcon.centerX=app.width/2
-titleIcon.centerY=250
-titleAltPlay = Label('NOW AVALABLE ON ARCADE OUTSIDE!',app.width/2,490,fill='yellow',bold=True,size=30,font='Tears in Rain')
-titleStartText = Label('PRESS "SPACE" TO SELECT MODE',app.width/2,550,fill='white',bold=True,size=30,font='Tears in Rain')
-titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
-titleGroup = Group(titleBG,titlePanel,titleIcon,titleStartText,titleControlsText,titleAltPlay)
+titleIcon.centerY=265
+titleAltPlay = Label('NOW AVALABLE ON ARCADE OUTSIDE!',app.width/2,505,fill='yellow',bold=True,size=30,font='Tears in Rain')
+titleStartText = Label('PRESS "SPACE" TO SELECT MODE',app.width/2,565,fill='white',bold=True,size=30,font='Tears in Rain')
+titleControlsText = Label('PRESS "TAB" FOR CONTROLS!',app.width/2,615,fill='white',bold=True,size=30,font='Tears in Rain')
+titleFullscreenText = Label('F11: TOGGLE FULLSCREEN',app.width/2,660,fill='white',bold=True,size=18,font='Tears in Rain')
+titleContentGroup = Group(titlePanel,titleIcon,titleStartText,titleControlsText,titleAltPlay,titleFullscreenText)
+titleGroup = Group(titleBG,titleContentGroup)
 titleGroup.visible=True
 
 selectionBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
-selectionPanel = Rect(app.width/2 - 350,80,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
-selectionTitle = Label('SELECT DIFFICULTY & LEVEL',app.width/2,140,fill='white',bold=True,size=34,font='Tears in Rain')
-selectionDifficultyText = Label(f'Difficulty: {app.selectedDifficulty}',app.width/2,240,fill='white',bold=True,size=28,font='Tears in Rain')
-selectionLevelText = Label(f'Level: {app.selectedLevel}',app.width/2,320,fill='white',bold=True,size=28,font='Tears in Rain')
-selectionHelpText = Label('LEFT / RIGHT = Difficulty | UP / DOWN = Level | SPACE = Start',app.width/2,420,fill='white',bold=True,size=17,font='Tears in Rain')
-selectionNoteText = Label('Press ESC to go back to title',app.width/2,490,fill='white',bold=True,size=18,font='Tears in Rain')
-selectionGroup = Group(selectionBG, selectionPanel, selectionTitle, selectionDifficultyText, selectionLevelText, selectionHelpText, selectionNoteText)
+selectionPanel = Rect(app.width/2 - 350,90,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
+selectionTitle = Label('SELECT DIFFICULTY & LEVEL',app.width/2,150,fill='white',bold=True,size=34,font='Tears in Rain')
+selectionDifficultyText = Label(f'Difficulty: {app.selectedDifficulty}',app.width/2,250,fill='white',bold=True,size=28,font='Tears in Rain')
+selectionLevelText = Label(f'Level: {app.selectedLevel}',app.width/2,330,fill='white',bold=True,size=28,font='Tears in Rain')
+selectionHelpText = Label('LEFT / RIGHT = Difficulty | UP / DOWN = Level | SPACE = Start',app.width/2,430,fill='white',bold=True,size=17,font='Tears in Rain')
+selectionNoteText = Label('Press ESC to go back to title',app.width/2,500,fill='white',bold=True,size=18,font='Tears in Rain')
+selectionContentGroup = Group(
+    selectionPanel, selectionTitle, selectionDifficultyText, selectionLevelText,
+    selectionHelpText, selectionNoteText
+)
+selectionGroup = Group(selectionBG, selectionContentGroup)
 selectionGroup.visible=False
 
 controlsBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
-controlsPanel = Rect(app.width/2 - 350,80,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
-controlsText = Label("CONTROLS",app.width/2,130,fill='white',bold=True,size=40,font='Tears in Rain')
-controlsleft = Label("Left / A : Move Left", app.width/2, 200,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsright = Label("Right / D : Move Right", app.width/2, 240,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsdown = Label("Down / S : Soft Drop", app.width/2, 280,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsdrop = Label("SPACE : Hard Drop", app.width/2, 320,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsrotateleft = Label("Z : Rotate Left", app.width/2, 380,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsrotateright = Label("X : Rotate Right", app.width/2, 420,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsrestart = Label("R : Restart Game", app.width/2, 480,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsback = Label("ESC : Back", app.width/2, 520,fill='white', bold=True, size=24, font='Tears in Rain')
-controlsGroup = Group(controlsBG,controlsPanel,controlsText,controlsleft,controlsright,controlsdown,controlsdrop,controlsrotateleft,controlsrotateright,controlsrestart,controlsback)
+controlsPanel = Rect(app.width/2 - 350,90,700,560,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
+controlsText = Label("CONTROLS",app.width/2,140,fill='white',bold=True,size=40,font='Tears in Rain')
+controlsleft = Label("Left / A : Move Left", app.width/2, 210,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsright = Label("Right / D : Move Right", app.width/2, 250,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsdown = Label("Down / S : Soft Drop", app.width/2, 290,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsdrop = Label("SPACE : Hard Drop", app.width/2, 330,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsrotateleft = Label("Z : Rotate Left", app.width/2, 390,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsrotateright = Label("X : Rotate Right", app.width/2, 430,fill='white', bold=True, size=24, font='Tears in Rain')
+controlshold = Label("C : Hold Piece (once per piece)", app.width/2, 470,fill='white', bold=True, size=24, font='Tears in Rain')
+controlspause = Label("ENTER : Pause / Resume", app.width/2, 510,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsrestart = Label("R : Restart Game", app.width/2, 550,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsback = Label("ESC : Back", app.width/2, 590,fill='white', bold=True, size=24, font='Tears in Rain')
+controlsContentGroup = Group(
+    controlsPanel, controlsText, controlsleft, controlsright, controlsdown,
+    controlsdrop, controlsrotateleft, controlsrotateright, controlsrestart,
+    controlshold, controlspause, controlsback
+)
+controlsGroup = Group(controlsBG, controlsContentGroup)
 controlsGroup.visible = False
 
 
 endBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
-endPanel = Rect(app.width/2 - 350,15,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
+endPanel = Rect(app.width/2 - 350,30,700,680,fill=gradient('dimGrey', 'black'),opacity=85,border='white',borderWidth=2)
 endIcon = Image(tetrisInGameIconImage,0,0)
 endIcon.width=endIcon.width*0.5
 endIcon.height=endIcon.height*0.5
 endIcon.centerX=app.width/2
-endIcon.centerY=200
-endText = Label('GAME OVER',app.width/2,400,fill='white',bold=True,size=30,font='Tears in Rain')
-endScoreText = Label("SCORE: " + str(app.score),endPanel.left + 50,450,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
-endLinesText = Label("LINES: " + str(app.linesCleared),endPanel.left + 50,500,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
-endLevelText = Label("LEVEL: " + str(app.level),endPanel.left + 50,550,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
-endHighScoreText = Label("HIGH SCORE: 0",app.width/2,450,fill='white',bold=True,size=23,font='Tears in Rain',align='left')
-endNewHighScoreText = Label("NEW HIGH SCORE!",app.width/2,500,fill='gold',bold=True,size=26,font='Tears in Rain')
+endIcon.centerY=215
+endText = Label('GAME OVER',app.width/2,415,fill='white',bold=True,size=30,font='Tears in Rain')
+endScoreText = Label("SCORE: " + str(app.score),endPanel.left + 50,465,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endLinesText = Label("LINES: " + str(app.linesCleared),endPanel.left + 50,515,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endLevelText = Label("LEVEL: " + str(app.level),endPanel.left + 50,565,fill='white',bold=True,size=30,font='Tears in Rain',align='left')
+endHighScoreText = Label("HIGH SCORE: 0",app.width/2,465,fill='white',bold=True,size=23,font='Tears in Rain',align='left')
+endNewHighScoreText = Label("NEW HIGH SCORE!",app.width/2,515,fill='gold',bold=True,size=26,font='Tears in Rain')
 endNewHighScoreText.visible = False
-endTimeText = Label(timeLabel.value,app.width/2,600,fill='white',bold=True,size=30,font='Tears in Rain')
-endRestartText = Label('PRESS "R" TO RESTART',app.width/2,650,fill='white',bold=True,size=30,font='Tears in Rain')
-endGroup = Group(endBG, endPanel, endIcon, endText,endScoreText, endLinesText, endLevelText,endTimeText, endRestartText,endHighScoreText, endNewHighScoreText)
+endTimeText = Label(timeLabel.value,app.width/2,615,fill='white',bold=True,size=30,font='Tears in Rain')
+endRestartButton = Rect(285, 640, 300, 55, fill=gradient('dimGrey', 'black'), border='white', borderWidth=2)
+endRestartText = Label('PRESS "R" TO RESTART',435,667,fill='white',bold=True,size=20,font='Tears in Rain')
+endAchievementsButton = Rect(625, 640, 370, 55, fill=gradient('darkSlateBlue', 'black'), border='gold', borderWidth=2)
+endAchievementsText = Label('ACHIEVEMENTS',810,667,fill='gold',bold=True,size=22,font='Tears in Rain')
+endContentGroup = Group(
+    endPanel, endIcon, endText, endScoreText, endLinesText, endLevelText,
+    endTimeText, endRestartButton, endRestartText, endAchievementsButton,
+    endAchievementsText, endHighScoreText, endNewHighScoreText
+)
+endGroup = Group(endBG, endContentGroup)
 endGroup.visible=False
+
+ACHIEVEMENTS = {
+    'first-line': ('First Line', 'Clear your first line.'),
+    'double-clear': ('Double Trouble', 'Clear two lines at once.'),
+    'triple-clear': ('Triple Threat', 'Clear three lines at once.'),
+    'tetris-clear': ('TETRIS!', 'Clear four lines at once.'),
+    'score-1000': ('Getting Started', 'Reach 1,000 points.'),
+    'score-5000': ('Five Grand', 'Reach 5,000 points.'),
+    'score-10000': ('Five Digits', 'Reach 10,000 points.'),
+    'level-10': ('Seasoned Stacker', 'Reach level 10.'),
+    'level-20': ('High-Rise', 'Reach level 20.'),
+    'classic-level-29': ('Classic Kill Screen', 'Reach the classic Tetris level 29.'),
+    'high-score': ('Record Breaker', 'Beat the high score on any difficulty.'),
+    'konami-code': ('Codebreaker', 'Enter the Konami code.'),
+    'first-hold': ('Plan B', 'Use the hold slot for the first time.'),
+    'hard-level-15-20000': ('Hardcore Climber', 'Score 20,000 in Hard, starting at level 15.')
+}
+
+achievementMenuBG = Rect(0, 0, app.width, app.height, fill=gradient('black', 'midnightBlue', start='top'))
+achievementMenuPanel = Rect(120, 15, 1040, 710, fill=gradient('dimGrey', 'black'), opacity=90, border='gold', borderWidth=2)
+achievementMenuTitle = Label('ACHIEVEMENTS', app.width / 2, 65, fill='gold', bold=True, size=38, font='Tears in Rain')
+achievementMenuCount = Label('', app.width / 2, 115, fill='white', bold=True, size=20, font='Tears in Rain')
+achievementMenuStatuses = {}
+achievementMenuDetails = {}
+achievementMenuItems = []
+for achievementIndex, (achievementId, achievementData) in enumerate(ACHIEVEMENTS.items()):
+    column = achievementIndex // 7
+    row = achievementIndex % 7
+    itemX = 145 + column * 500
+    itemY = 150 + row * 68
+    itemBG = Rect(itemX, itemY, 475, 58, fill='black', opacity=55, border='dimGrey')
+    itemTitle = Label(achievementData[0], itemX + 12, itemY + 18, fill='white', bold=True, size=16, font='Tears in Rain', align='left')
+    itemDescription = Label(achievementData[1], itemX + 12, itemY + 41, fill='lightGrey', size=12, font='Tears in Rain', align='left')
+    itemStatus = Label('LOCKED', itemX + 462, itemY + 18, fill='grey', bold=True, size=11, font='Tears in Rain', align='right')
+    achievementMenuStatuses[achievementId] = itemStatus
+    achievementMenuDetails[achievementId] = (
+        itemTitle, itemDescription, achievementData, itemX + 12
+    )
+    achievementMenuItems.extend([itemBG, itemTitle, itemDescription, itemStatus])
+
+achievementMenuBackButton = Rect(475, 660, 330, 48, fill=gradient('dimGrey', 'black'), border='white', borderWidth=2)
+achievementMenuBackText = Label('BACK TO GAME OVER', 640, 684, fill='white', bold=True, size=20, font='Tears in Rain')
+achievementMenuContentGroup = Group(
+    achievementMenuPanel, achievementMenuTitle,
+    achievementMenuCount, achievementMenuBackButton, achievementMenuBackText
+)
+for achievementMenuItem in achievementMenuItems:
+    achievementMenuContentGroup.add(achievementMenuItem)
+achievementMenuGroup = Group(achievementMenuBG, achievementMenuContentGroup)
+achievementMenuGroup.visible = False
+
+achievementPopupBG = Rect(
+    10, 30, 380, 100,
+    fill=gradient('darkSlateBlue', 'black', start='left'),
+    border='gold', borderWidth=2, opacity=0
+)
+achievementPopupTitle = Label(
+    'ACHIEVEMENT UNLOCKED!', 200, 60, fill='gold', bold=True, size=18,
+    font='Tears in Rain', opacity=0
+)
+achievementPopupDescription = Label(
+    '', 200, 98, fill='white', size=13,
+    font='Tears in Rain', opacity=0
+)
+achievementPopup = Group(
+    achievementPopupBG, achievementPopupTitle, achievementPopupDescription
+)
+achievementPopup.visible = False
+
+
+def onResize():
+    deltaX = (app.width - app.previousWindowWidth) / 2
+    deltaY = (app.height - app.previousWindowHeight) / 2
+
+    app.group.centerX += deltaX
+    app.group.centerY += deltaY
+    app.offsetX += deltaX
+    app.offsetY += deltaY
+    app.layoutOffsetY += deltaY
+
+    for menuContent in (
+            titleContentGroup, selectionContentGroup, controlsContentGroup,
+            endContentGroup, achievementMenuContentGroup):
+        menuContent.centerX = app.width / 2
+        menuContent.centerY = app.height / 2
+
+    for background in (
+            bg, titleBG, selectionBG, controlsBG, endBG, achievementMenuBG):
+        background.left = 0
+        background.top = 0
+        background.width = app.width
+        background.height = app.height
+
+    app.previousWindowWidth = app.width
+    app.previousWindowHeight = app.height
+    if not app.fullscreen:
+        app.windowedSize = (app.width, app.height)
+
+
+def toggleFullscreen(event, _callUserFn, _wrapper):
+    if event.type != pygame.KEYDOWN or event.key != pygame.K_F11:
+        return
+
+    if app.fullscreen:
+        width, height = app.windowedSize
+        screen = pygame.display.set_mode((width, height), pygame.RESIZABLE)
+        app.fullscreen = False
+    else:
+        app.windowedSize = (app.width, app.height)
+        screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+        app.fullscreen = True
+
+    app._app._screen = screen
+    width, height = screen.get_size()
+    pygame.event.post(pygame.event.Event(
+        pygame.VIDEORESIZE,
+        {'size': (width, height), 'w': width, 'h': height}
+    ))
+
+
+pygameEvent.connect(toggleFullscreen)
+
+
+def unlockAchievement(achievementId):
+    if achievementId in app.unlockedAchievements:
+        return
+
+    app.unlockedAchievements.add(achievementId)
+    app.achievementQueue.append(achievementId)
+
+
+def resetRunAchievements():
+    app.unlockedAchievements.clear()
+    app.achievementQueue.clear()
+    app.konamiProgress = 0
+    app.achievementPopupPhase = 'hidden'
+    app.achievementPopupTimer = 0
+    achievementPopup.visible = False
+    achievementPopupBG.opacity = 0
+    achievementPopupTitle.opacity = 0
+    achievementPopupDescription.opacity = 0
+
+
+def showAchievementMenu():
+    for achievementId, statusLabel in achievementMenuStatuses.items():
+        isUnlocked = achievementId in app.unlockedAchievements
+        titleLabel, descriptionLabel, achievementData, descriptionLeft = achievementMenuDetails[achievementId]
+        statusLabel.value = 'UNLOCKED' if isUnlocked else 'LOCKED'
+        statusLabel.fill = 'limeGreen' if isUnlocked else 'grey'
+        titleLabel.value = achievementData[0]
+        descriptionLabel.value = achievementData[1] if isUnlocked else '???'
+        descriptionLabel.left = descriptionLeft
+
+    achievementMenuCount.value = (
+        f'{len(app.unlockedAchievements)} / {len(ACHIEVEMENTS)} UNLOCKED'
+    )
+    endGroup.visible = False
+    achievementMenuGroup.visible = True
+    app.playing = 'achievements'
+
+
+def hideAchievementMenu():
+    achievementMenuGroup.visible = False
+    endGroup.visible = True
+    app.playing = 'end'
+
+
+def updateAchievementPopup():
+    phase = app.achievementPopupPhase
+    timer = app.achievementPopupTimer
+
+    if phase == 'hidden':
+        if not app.achievementQueue:
+            return
+
+        title, description = ACHIEVEMENTS[app.achievementQueue.pop(0)]
+        achievementPopupDescription.value = f'{title}: {description}'
+        achievementPopup.visible = True
+        app.achievementPopupPhase = 'fade-in'
+        app.achievementPopupTimer = 0
+        return
+
+    timer += 1
+    app.achievementPopupTimer = timer
+
+    if phase == 'fade-in':
+        opacity = min(100, timer * 10)
+        if opacity == 100:
+            app.achievementPopupPhase = 'hold'
+            app.achievementPopupTimer = 0
+    elif phase == 'hold':
+        opacity = 100
+        if timer >= 75:
+            app.achievementPopupPhase = 'fade-out'
+            app.achievementPopupTimer = 0
+    else:
+        opacity = max(0, 100 - timer * 10)
+        if opacity == 0:
+            achievementPopup.visible = False
+            app.achievementPopupPhase = 'hidden'
+            app.achievementPopupTimer = 0
+
+    achievementPopupBG.opacity = opacity
+    achievementPopupTitle.opacity = opacity
+    achievementPopupDescription.opacity = opacity
+
+
+def getHighScoreForDifficulty(difficulty):
+    if difficulty == 'Easy':
+        return app.highScoreEasy
+    if difficulty == 'Hard':
+        return app.highScoreHard
+    return app.highScoreNormal
+
+
+def checkAchievementProgress():
+    if app.score >= 1000:
+        unlockAchievement('score-1000')
+    if app.score >= 5000:
+        unlockAchievement('score-5000')
+    if app.score >= 10000:
+        unlockAchievement('score-10000')
+    if app.level >= 10:
+        unlockAchievement('level-10')
+    if app.level >= 20:
+        unlockAchievement('level-20')
+    if app.level >= CLASSIC_TETRIS_MAX_LEVEL:
+        unlockAchievement('classic-level-29')
+    if app.score > getHighScoreForDifficulty(app.currentDifficulty):
+        unlockAchievement('high-score')
+    if (app.currentDifficulty == 'Hard'
+            and app.startLevel == MAX_SELECTABLE_LEVEL
+            and app.score >= 20000):
+        unlockAchievement('hard-level-15-20000')
 
 
 def updateUI():
     scoreLabel.value = f"Score: {app.score}"
     linesLabel.value = f"Lines: {app.linesCleared}"
     levelLabel.value = f"Level: {app.level}"
+    checkAchievementProgress()
 
 
 def updateSelectionLabels():
@@ -289,7 +577,7 @@ def changeSelectionDifficulty(direction):
     updateSelectionLabels()
 
 def changeSelectionLevel(delta):
-    app.selectedLevel = max(1, min(15, app.selectedLevel + delta))
+    app.selectedLevel = max(1, min(MAX_SELECTABLE_LEVEL, app.selectedLevel + delta))
     updateSelectionLabels()
 
 def createBlock(x, y, fillColor, borderColor):
@@ -352,8 +640,8 @@ def newPiece(t, mode):
     if mode == 'cur':
         curPiece.clear()
 
-        startX = 550
-        startY = 20
+        startX = app.offsetX + 150
+        startY = app.offsetY
 
         for (x, y) in coords:
             block = createBlock(
@@ -367,8 +655,8 @@ def newPiece(t, mode):
     elif mode == 'next':
         previewBlocks.clear()
 
-        previewStartX = 1050
-        previewStartY = 140
+        previewStartX = app.offsetX + 650
+        previewStartY = app.offsetY + 120
 
         for (x, y) in coords:
             block = createBlock(
@@ -378,6 +666,48 @@ def newPiece(t, mode):
                 color[1]
             )
             previewBlocks.add(block)
+
+
+def updateHoldDisplay():
+    holdPieceBlocks.clear()
+    holdEmptyText.visible = app.heldType is None
+    if app.heldType is None:
+        return
+
+    coords, color = getPieceData(app.heldType)
+    startX = app.offsetX - 325
+    startY = app.offsetY + 145
+    for x, y in coords:
+        holdPieceBlocks.add(createBlock(
+            startX + x * app.blockSize,
+            startY + y * app.blockSize,
+            color[0],
+            color[1]
+        ))
+
+
+def holdCurrentPiece():
+    if app.playing != True or not app.canHold:
+        return
+
+    unlockAchievement('first-hold')
+    app.canHold = False
+    ghostPiece.clear()
+    if app.heldType is None:
+        app.heldType = app.currentType
+        app.currentType = app.nextType
+        app.nextType = getNextPiece()
+        newPiece(app.nextType, 'next')
+    else:
+        app.currentType, app.heldType = app.heldType, app.currentType
+
+    newPiece(app.currentType, 'cur')
+    updateHoldDisplay()
+    if not canMove(0, 0):
+        gameOver()
+        return
+    updateGhost()
+
 
 refillBag()
 
@@ -399,7 +729,7 @@ def canMove(dx, dy):
         if col < 0 or col >= app.cols:
             return False
 
-        if newY > 720:
+        if newY > PLAYFIELD_BOTTOM + app.layoutOffsetY:
             return False
 
         for placed in placedPieces:
@@ -438,7 +768,7 @@ def rotatePiece(direction):
         for (x, y) in positions:
             if x < app.offsetX or x > app.offsetX + (app.cols-1)*app.blockSize:
                 return False
-            if y > 720:
+            if y > PLAYFIELD_BOTTOM + app.layoutOffsetY:
                 return False
             for placed in placedPieces:
                 if placed.centerX == x and placed.centerY == y:
@@ -467,7 +797,42 @@ def rotatePiece(direction):
     for i, block in enumerate(curPiece):
         block.centerX, block.centerY = newPositions[i]
 
+def onMousePress(mouseX, mouseY, button):
+    if button != 0:
+        return
+
+    if app.playing == 'end':
+        if (endAchievementsButton.left <= mouseX <= endAchievementsButton.right
+                and endAchievementsButton.top <= mouseY <= endAchievementsButton.bottom):
+            showAchievementMenu()
+    elif app.playing == 'achievements':
+        if (achievementMenuBackButton.left <= mouseX <= achievementMenuBackButton.right
+                and achievementMenuBackButton.top <= mouseY <= achievementMenuBackButton.bottom):
+            hideAchievementMenu()
+
+
 def onKeyPress(key):
+    normalizedKey = key.lower()
+    if normalizedKey == KONAMI_CODE[app.konamiProgress]:
+        app.konamiProgress += 1
+        if app.konamiProgress == len(KONAMI_CODE):
+            unlockAchievement('konami-code')
+            app.konamiProgress = 0
+    else:
+        app.konamiProgress = 1 if normalizedKey == KONAMI_CODE[0] else 0
+
+    if key == 'enter':
+        if app.playing == True:
+            app.playing = 'paused'
+            pauseGroup.visible = True
+            tetrisMusic.pause()
+        elif app.playing == 'paused':
+            app.playing = True
+            pauseGroup.visible = False
+            tetrisMusic.channel.unpause()
+            updateGhost()
+        return
+
     if key == '-':
         if (app.volume > 0):
             app.volume -= 0.1
@@ -483,6 +848,8 @@ def onKeyPress(key):
         
     if key == 'r':
         if app.playing == 'end':
+            resetRunAchievements()
+
             # Save high score BEFORE resetting
             if app.currentDifficulty == 'Easy':
                 currentHigh = app.highScoreEasy
@@ -507,6 +874,10 @@ def onKeyPress(key):
             app.level = 1   # start at 1, not 0
             app.startTime = None
             app.timerThing = 0
+            app.heldType = None
+            app.canHold = True
+            updateHoldDisplay()
+            holdUIGroup.visible = False
 
             # Reset pieces
             placedPieces.clear()
@@ -547,6 +918,9 @@ def onKeyPress(key):
         if (app.playing == True):
             rotatePiece("right")
             updateGhost()
+    if key == 'c' and app.playing == True:
+        holdCurrentPiece()
+
     if key == 'tab':
         if (app.playing == False):
             app.playing = 'controls'
@@ -561,6 +935,11 @@ def onKeyPress(key):
             app.playing = False
             selectionGroup.visible=False
             titleGroup.visible=True
+        elif app.playing == 'achievements':
+            hideAchievementMenu()
+
+    if key == 'e' and app.playing == 'end':
+        showAchievementMenu()
 
     if key == 'space':
         if (app.playing == True):    
@@ -580,6 +959,11 @@ def onKeyPress(key):
             app.level = app.startLevel
             app.linesCleared = 0
             app.score = 0
+            app.heldType = None
+            app.canHold = True
+            updateHoldDisplay()
+            holdUIGroup.visible = True
+            pauseGroup.visible = False
             app.startTime = time.time()
             app.timerThing = 0
 
@@ -745,6 +1129,14 @@ def clearRows():
         
         lines = len(fullRows)
         app.linesCleared += lines
+        if lines >= 1:
+            unlockAchievement('first-line')
+        if lines >= 2:
+            unlockAchievement('double-clear')
+        if lines >= 3:
+            unlockAchievement('triple-clear')
+        if lines >= 4:
+            unlockAchievement('tetris-clear')
 
         # scoring
         levelMultiplier = app.level + 1
@@ -767,7 +1159,10 @@ def clearRows():
 
 #locks pieces in place when they can no longer move
 def gameOver():
+    checkAchievementProgress()
     app.playing = 'end'
+    pauseGroup.visible = False
+    holdUIGroup.visible = False
     tetrisMusic.pause()
     endGroup.visible = True
     tetrisEndMusic.play(restart=True, loop=True)
@@ -808,6 +1203,7 @@ def lockPiece():
 
         app.currentType = app.nextType
         app.nextType = getNextPiece()
+        app.canHold = True
 
         newPiece(app.currentType, 'cur')
         newPiece(app.nextType, 'next')
@@ -841,7 +1237,7 @@ def updateGhost():
                     canDrop = False
                     break
 
-                if newY > 720:
+                if newY > PLAYFIELD_BOTTOM + app.layoutOffsetY:
                     canDrop = False
                     break
 
@@ -893,44 +1289,15 @@ def onStep():
         endHighScoreText.right = endPanel.right - 50
         endNewHighScoreText.right = endPanel.right - 50
 
-        if (curPiece.top < 20):
-            curPiece.top = 20
-        if (placedPieces.top == 20):
-            app.playing = 'end'
-            tetrisMusic.pause()
-            endGroup.visible = True
-            tetrisEndMusic.play(restart=True, loop=True)
-
-            # Check high score
-            if app.currentDifficulty == 'Easy':
-                currentHigh = app.highScoreEasy
-            elif app.currentDifficulty == 'Hard':
-                currentHigh = app.highScoreHard
-            else:
-                currentHigh = app.highScoreNormal
-
-            if app.score > currentHigh:
-                if app.currentDifficulty == 'Easy':
-                    app.highScoreEasy = app.score
-                elif app.currentDifficulty == 'Hard':
-                    app.highScoreHard = app.score
-                else:
-                    app.highScoreNormal = app.score
-                app.highScore = app.score
-                app.newHighScore = True
-                save_high_score()
-            else:
-                app.highScore = currentHigh
-                app.newHighScore = False
-
-            # Update end screen text
-            endHighScoreText.value = f"HIGH SCORE: {app.highScore}"
-            endNewHighScoreText.visible = app.newHighScore
+        if curPiece.top < app.offsetY:
+            curPiece.top = app.offsetY
+        if placedPieces.top == app.offsetY:
+            gameOver()
 
         endLinesText.value = 'LINES: ' + str(app.linesCleared)
         endScoreText.value = 'SCORE: ' + str(app.score)
         endLevelText.value = 'LEVEL: ' + str(app.level)
-        previewBlocks.centerX=1100
+        previewBlocks.centerX = app.offsetX + 700
         app.timerThing += 1
         updateGhost()
 
@@ -957,5 +1324,6 @@ def onStep():
     if app.playing == 'end' and app.newHighScore:
         app.steps += 1
         endNewHighScoreText.opacity = 50 + 50 * abs(math.sin(app.steps * 0.15))
+    updateAchievementPopup()
 
 cmu_graphics.run()
