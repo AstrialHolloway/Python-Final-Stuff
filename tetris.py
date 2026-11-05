@@ -347,7 +347,7 @@ achievementMenuItems = []
 for achievementIndex, (achievementId, achievementData) in enumerate(ACHIEVEMENTS.items()):
     column = achievementIndex // 7
     row = achievementIndex % 7
-    itemX = 145 + column * 500
+    itemX = 160 + column * 500
     itemY = 150 + row * 68
     itemBG = Rect(itemX, itemY, 475, 58, fill='black', opacity=55, border='dimGrey')
     itemTitle = Label(achievementData[0], itemX + 12, itemY + 18, fill='white', bold=True, size=16, font='Tears in Rain', align='left')
