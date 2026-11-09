@@ -470,7 +470,7 @@ def showAchievementMenu():
         statusLabel.fill = 'limeGreen' if isUnlocked else 'grey'
         titleLabel.value = achievementData[0]
         descriptionLabel.value = achievementData[1] if isUnlocked else '???'
-        descriptionLabel.left = descriptionLeft
+        descriptionLabel.left = titleLabel.left
 
     achievementMenuCount.value = (
         f'{len(app.unlockedAchievements)} / {len(ACHIEVEMENTS)} UNLOCKED'
