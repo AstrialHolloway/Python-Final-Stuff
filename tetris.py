@@ -670,10 +670,11 @@ def newPiece(t, mode):
 
 def updateHoldDisplay():
     holdPieceBlocks.clear()
-    holdEmptyText.visible = app.heldType is None
     if app.heldType is None:
+        holdEmptyText.value = 'EMPTY'
         return
 
+    holdEmptyText.value = ''
     coords, color = getPieceData(app.heldType)
     startX = app.offsetX - 325
     startY = app.offsetY + 145
